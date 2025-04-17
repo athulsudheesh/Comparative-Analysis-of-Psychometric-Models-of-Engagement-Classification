@@ -1,0 +1,42 @@
+library(nimble)
+ILCRI <- nimbleCode({
+    mu_person[1:3] <- rep(0,3)
+    # Likelihood
+    for (i in 1:I){
+        for(j in 1:J){
+        Y[i,j] ~ dbern(correct_resp_prob[i,j])
+        C[i,j] ~ dbern(class_p[i,j])
+        T_mat[i,j] ~ dnorm(mu_l_ij[i,j], tau_time[i,j])
+        
+        correct_resp_prob[i,j] <- C[i,j]*(irp[i,j]) + (1-C[i,j])*g
+        #correct_resp_prob[i,j] <- class_p[i,j]*(irp[i,j]) + (1-class_p[i,j])*g
+        irp[i,j] <- ilogit(1.7*(theta[i] - b[j]))
+        
+        class_p[i,j] <- ilogit(1.7*(eta[i] - kappa[j]))
+        
+        mu_l_ij[i,j] <- nu_til[j] + lambda[j]*xi[i] + C[i,j]*delta[j]
+        sigma2_time[i,j] <- C[i,j]*sigma2_epsilon[j] + (1-C[i,j])*sigma2_epsilon_til
+        tau_time[i,j] <- pow(sigma2_time[i,j],-1)
+        }
+     # Prior for person parameter
+    person_par[i,1:3] ~ dmnorm(mu_person[1:3], cholesky = Sigma_person[1:3,1:3], prec_param=0)
+    theta[i] <- person_par[i,1]
+    eta[i]  <- person_par[i,2]
+    xi[i] <- person_par[i,3]
+  }
+    #Prior 
+    for(j in 1:J){
+        #g[j] ~ dbeta(1,1)T(,0.3)
+        a[j] ~ T(dnorm(0, 1.0),0,)
+        b[j] ~ dnorm(0, 1.0)
+        kappa[j] ~ dnorm(0, 1.0)
+        nu_til[j] ~ T(dnorm(0, 1.0),,0)
+        delta[j] ~ T(dnorm(0, 1.0),0,)
+        lambda[j] ~ T(dnorm(0,1.0),0,)
+        sigma2_epsilon[j] ~ dgamma(1/2,1/2)
+    }
+    sigma2_epsilon_til ~ dgamma(1/2,1/2)
+    g ~ T(dbeta(1,1),,0.3)
+    
+    Sigma_person[1:3,1:3] ~ dlkj_corr_cholesky(1,3)
+})
