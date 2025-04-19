@@ -57,28 +57,39 @@ get_summarystats <- function(assessment_id){
 #===========================================================================
 plot_item_response_times <- function(assessment_id){
      dat <- load_and_clean_data(assessment_id)
-     longRT <- dat$RT |> rownames_to_column("student") |> pivot_longer(
+    longRT <- dat$RT |> rownames_to_column("student") |> pivot_longer(
         cols = -student,
         names_to = "item",
         values_to = "response_time"
         )
-    p <- ggplot(longRT, aes(x = response_time, y = item, fill = item)) +
-    geom_density_ridges(alpha = 0.4, scale = 5,rel_min_height = 0.01,bandwidth = 1.5,fill = "#800000FF", color=NA) +
-        theme_bw() +
-        theme(
-                plot.title = element_text(hjust=0.5),
-                axis.text.x = element_text(angle = 0, size = 10),
-                axis.text.y = element_text(angle = 0, size = 7.5),
-                axis.title.x = element_text(size = 10),
-                panel.border = element_rect(size = 1.5),
-                axis.title = element_text(face = "bold"),
-                legend.position = "none"
-            ) +
-        labs(
-            title = as.character(assessment_id),
-            x = "Response Time (s)",
-            y = "Items"
-        )
+
+    D <- dat$X |> colMeans(na.rm = TRUE) |> as.data.frame() |> rownames_to_column() |> 
+            rename(item = "rowname" , d="colMeans(dat$X, na.rm = TRUE)")|>
+            mutate(difficulty = ifelse(d > 0.5, "H", "L")) |>
+            select(c(item, difficulty))
+
+    longRT <- left_join(longRT,D)
+    p <- ggplot(longRT, aes(x = response_time, y = item, fill = difficulty)) +
+        geom_density_ridges(alpha = 0.4, scale = 10,rel_min_height = 0.01,bandwidth = 1.5, color=NA) +
+            theme_bw() +
+            theme(legend.position="none",
+                    plot.title = element_text(hjust=0.5, size =),
+                    axis.text.x = element_text(angle = 0, size = 10),
+                    axis.text.y = element_text(angle = 0, size = 7.5),
+                    axis.title.x = element_text(size = 10),
+                    panel.border = element_rect(size = 1.5),
+                    axis.title = element_text(face = "bold")
+                ) +
+            labs(
+                title = as.character(assessment_id),
+                x = "Response Time (s)",
+                y = "Items"
+            )+
+    scale_fill_manual(
+        values = c("H" = "#1b9e77", "L" = "#7570b3"),
+        name = "Difficulty",
+        labels = c("High",  "Low")
+    )
     
 }
 #===========================================================================
@@ -133,6 +144,46 @@ plot_student_response_times <- function(assessment_id){
         labels = c("High", "Medium", "Low")
     )
 }
+
+plot_score_distributions <- function(assessment_id){
+    dat <- load_and_clean_data(assessment_id)
+    longRT <- dat$RT |> rownames_to_column("student") |> pivot_longer(
+            cols = -student,
+            names_to = "item",
+            values_to = "response_time"
+            )
+    scores <- dat$X |> rowSums(na.rm = TRUE) |> as.data.frame() |> rownames_to_column("student") |> rename(ts = "rowSums(dat$X, na.rm = TRUE)")
+    ggdensity(scores,x="ts", color = "#155F83FF")+theme_bw() +
+                theme(legend.position="none",
+                        plot.title = element_text(hjust=0.5),
+                        axis.text.x = element_text(angle = 0, size = 10),
+                        axis.text.y = element_text(angle = 0, size = 10),
+                        axis.title.x = element_text(size = 10),
+                        panel.border = element_rect(size = 1.5),
+                        axis.title = element_text(face = "bold")
+                    ) +
+                    labs(title = as.character(assessment_id),x = "Sum Score", y = "Density")
+}
+
+plot_RT_distributions <- function(assessment_id){
+    dat <- load_and_clean_data(assessment_id)
+    longRT <- dat$RT |> rownames_to_column("student") |> pivot_longer(
+            cols = -student,
+            names_to = "item",
+            values_to = "response_time"
+            )
+    RTs <- dat$RT |> rowMeans(na.rm = TRUE) |> as.data.frame() |> rownames_to_column("student") |> rename(ts = "rowMeans(dat$RT, na.rm = TRUE)")
+    ggdensity(RTs,x="ts", color = "#800000FF")+ theme_bw() +
+                theme(legend.position="none",
+                        plot.title = element_text(hjust=0.5),
+                        axis.text.x = element_text(angle = 0, size = 10),
+                        axis.text.y = element_text(angle = 0, size = 10),
+                        axis.title.x = element_text(size = 10),
+                        panel.border = element_rect(size = 1.5),
+                        axis.title = element_text(face = "bold")
+                    ) +
+                    labs(title = as.character(assessment_id),x = "Avg. Response Time (s)", y = "Density")
+}
 #===========================================================================
 #                            SCRIPTS
 #===========================================================================
@@ -176,7 +227,6 @@ tt(summary_stats, digits = 2,
     print("latex")
 #-------------------------------------------------------------------------------------
 
- |> mutate(student = factor(student, levels = sort(unique(student))))
 library(ggplot2)
 library(ggridges)
 library(viridis)
@@ -190,73 +240,48 @@ c<- plot_student_response_times(735540)
 d<- plot_student_response_times(763628)
 ggarrange(a,b,c,d,legend="bottom", common.legend=TRUE)
 ggsave("RTStudents.pdf")
+plot_crop("RTStudents.pdf")
 
-b
-a
 ggsave("test.pdf")
 
 j <- plot_item_response_times(747119)
 k <- plot_item_response_times(680810)
 l <- plot_item_response_times(735540)
 m <- plot_item_response_times(763628)
-plot_grid(j,k,l,m,align="hv")
+ggarrange(j,k,l,m,legend="bottom", common.legend=TRUE) 
 ggsave("RTItems.pdf")
+plot_crop("RTItems.pdf")
 
+
+library(knitr)
+a<- plot_score_distributions(747119)
+b<- plot_score_distributions(680810)
+c<- plot_score_distributions(735540)
+d<- plot_score_distributions(763628)
+z<- ggarrange(a,b,c,d,nrow=4)
+plot_crop("ScoreDistributions.pdf")
+ggsave('ScoreDistributions.pdf')
+system2(command = "pdfcrop", 
+        args    = c("ScoreDistributions.pdf", 
+                    "ScoreDistributions.pdf") 
+        )
+
+i<- plot_RT_distributions(747119)
+j<- plot_RT_distributions(680810)
+k<- plot_RT_distributions(735540)
+l<- plot_RT_distributions(763628)
+x<- ggarrange(i,j,k,l,nrow=4) 
+ggarrange(z,x, labels = c("A", "B"))
+ggsave('ScoresAndRTDistributions.pdf')
+plot_crop('ScoresAndRTDistributions.pdf')
 
 #==========================================================================================================================
 #                                                     WORK IN PROGRESS SCRIPTS
 #==========================================================================================================================
-ggplot()
-dat <- load_and_clean_data(763628)
-longRT <- dat$RT |> rownames_to_column("student") |> pivot_longer(
-        cols = -student,
-        names_to = "item",
-        values_to = "response_time"
-        )
-
-scores <- dat$X |> rowSums() |> as.data.frame() |> rownames_to_column("student")
-
-left_join(longRT)
 
 
 
-score_d <- dat$X |> 
-  as.data.frame() |>
-  rownames_to_column("student") |>
-  mutate(
-    sum = rowSums(across(-student), na.rm=TRUE)
-  ) |>
-  mutate(
-    # Create three equally sized groups
-    score = case_when(
-      sum > quantile(sum, 2/3) ~ "H",
-      sum > quantile(sum, 1/3) ~ "M",
-      TRUE ~ "L"
-    )
-  ) |> select(student, score)
 
-longRT<- left_join(longRT, score_d)
-ggplot(longRT, aes(x = response_time, y = student, fill = score)) +
-    geom_density_ridges(alpha = 0.4, scale = 10,rel_min_height = 0.01,bandwidth = 1.5, color=NA) +
-        theme_bw() +
-        theme(
-                plot.title = element_text(hjust=0.5),
-                axis.text.x = element_text(angle = 0, size = 10),
-                axis.text.y = element_blank(),
-                axis.ticks.y = element_blank(),
-                axis.title.x = element_text(size = 10),
-                panel.border = element_rect(size = 1.5),
-                axis.title = element_text(face = "bold")
-            ) +
-        labs(
-            title = as.character(1),
-            x = "Response Time (s)",
-            y = "Students"
-        )+
-  scale_fill_manual(
-    values = c("H" = "#8A9045FF", "M" = "#155F83FF", "L" = "#800000FF"),
-    name = "Score",
-    labels = c("High", "Medium", "Low")
-  )
-ggsave('test.pdf')
+
+
 
