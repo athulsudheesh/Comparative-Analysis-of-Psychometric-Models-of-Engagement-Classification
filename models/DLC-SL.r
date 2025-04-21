@@ -29,7 +29,7 @@ DLCSL <- nimbleCode({
       #Prior for other paramters
     for(j in 1:J){
         #g[j] ~ dbeta(1,4)T(,0.3)
-        a[j] ~ T(dnorm(mean=0, sd=1.0),0,)
+        #a[j] ~ T(dnorm(mean=0, sd=1.0),0,)
         b[j] ~ dnorm(mean=0, sd=1.0)
         tau[j] ~ dnorm(mean=0, sd=1.0)
     }
