@@ -1,6 +1,6 @@
 files.sources = list.files("models", full.names=TRUE)
 sapply(files.sources, source)
-
+source("scripts/threshold_functions.r")
 #===================================================================================================
 #                                          Latent Variable Approaches
 #===================================================================================================
@@ -288,7 +288,8 @@ Normative.fit <- function(dat, k=0.1,
     RT[is.na(RT)] <- 0
     RT <- sapply(as.data.frame(RT), function(col) {
   col > k*mean(col, na.rm = TRUE)
-})
+})  
+    thresholds = k* colMeans(RT <- dat$RT, na.rm = TRUE)
     I <- nrow(X)
     J <- ncol(X)
     const <- list(I=I,J=J)
@@ -317,30 +318,104 @@ Normative.fit <- function(dat, k=0.1,
                         nburnin = mcmc.config$no.of.burn.ins,
                         nchains = mcmc.config$no.of.chains,
                         samplesAsCodaMCMC = TRUE)
-    return(list(posterior_samples = mcmcfit, model = model, nodes = nodes))
+    return(list(posterior_samples = mcmcfit, model = model, nodes = nodes, thresholds = thresholds))
 }
+
+#===========================================================================
+#                            VICS
+#===========================================================================
+VICS.fit <- function(dat,
+                    params.to.monitor=NULL,
+                    mcmc.config = list(
+                                    no.of.iterations = 12000,
+                                    no.of.burn.ins = 2000,
+                                    no.of.chains = 3
+                                    )){
+    X <- dat$X
+    RT <- dat$RT
+    RT[is.na(RT)] <- 0
+    X[is.na(X)] <- 0
+    thresholds <- vics_method(as.matrix(X),as.matrix(RT))
+    RT<- t(t(RT) > thresholds)
+    
+    I <- nrow(X)
+    J <- ncol(X)
+    const <- list(I=I,J=J)
+    data <- list(Y=X,class_p = RT)
+    inits <- function(){
+    list(theta=rnorm(I,0,1),
+        a = abs(rnorm(J,0,1)),
+        b = rnorm(J,0,1),
+        #g = runif(J,0,0.3),
+        g = runif(1,0,0.3),
+        tau = abs(rnorm(J,0,1)),
+        gamma = abs(rnorm(1,0,1)))
+    }
+
+    model <- nimbleModel(code=EMIRT , constants = const,
+                    data = data, inits = list())
+    
+    dataNodes <- model$getNodeNames(dataOnly = TRUE)
+    parentNodes <- model$getParents(dataNodes, stochOnly = TRUE) 
+    simNodes <- model$getDependencies(parentNodes, self = FALSE)
+    nodes = list(dataNodes = dataNodes, parentNodes = parentNodes, simNodes=simNodes)
+    
+    mcmcfit <- nimbleMCMC(model = model,
+                        monitors = c(parentNodes,params.to.monitor),
+                        niter = mcmc.config$no.of.iterations,
+                        nburnin = mcmc.config$no.of.burn.ins,
+                        nchains = mcmc.config$no.of.chains,
+                        samplesAsCodaMCMC = TRUE)
+    return(list(posterior_samples = mcmcfit, model = model, nodes = nodes, thresholds=thresholds))
+}
+#===========================================================================
+#                            VII
+#===========================================================================
+VII.fit <- function(dat,
+                    params.to.monitor=NULL,
+                    mcmc.config = list(
+                                    no.of.iterations = 12000,
+                                    no.of.burn.ins = 2000,
+                                    no.of.chains = 3
+                                    )){
+    X <- dat$X
+    RT <- dat$RT
+    RT[is.na(RT)] <- 0
+    X[is.na(X)] <- 0
+    thresholds <- vii_thresholds(as.matrix(X),as.matrix(RT))
+    RT<- t(t(RT) > thresholds)
+    
+    I <- nrow(X)
+    J <- ncol(X)
+    const <- list(I=I,J=J)
+    data <- list(Y=X,class_p = RT)
+    inits <- function(){
+    list(theta=rnorm(I,0,1),
+        a = abs(rnorm(J,0,1)),
+        b = rnorm(J,0,1),
+        #g = runif(J,0,0.3),
+        g = runif(1,0,0.3),
+        tau = abs(rnorm(J,0,1)),
+        gamma = abs(rnorm(1,0,1)))
+    }
+
+    model <- nimbleModel(code=EMIRT , constants = const,
+                    data = data, inits = list())
+    
+    dataNodes <- model$getNodeNames(dataOnly = TRUE)
+    parentNodes <- model$getParents(dataNodes, stochOnly = TRUE) 
+    simNodes <- model$getDependencies(parentNodes, self = FALSE)
+    nodes = list(dataNodes = dataNodes, parentNodes = parentNodes, simNodes=simNodes)
+    
+    mcmcfit <- nimbleMCMC(model = model,
+                        monitors = c(parentNodes,params.to.monitor),
+                        niter = mcmc.config$no.of.iterations,
+                        nburnin = mcmc.config$no.of.burn.ins,
+                        nchains = mcmc.config$no.of.chains,
+                        samplesAsCodaMCMC = TRUE)
+    return(list(posterior_samples = mcmcfit, model = model, nodes = nodes, thresholds=thresholds))
+}
+
 #===========================================================================
 #                            scripts
 #===========================================================================
-source("scripts/data_handling_utils.r")
-data <- load_and_clean_data(747119)
-temp <- ILCRI.fit(data, 
-        mcmc.config = list(
-                                    no.of.iterations = 12000,
-                                    no.of.burn.ins = 2000,
-                                    no.of.chains = 1
-                                    ))
-MCMCsummary(temp$posterior_samples)
-
-
-source("scripts/data_handling_utils.r")
-data <- load_and_clean_data(747119)
-temp <- Normative.fit(data, 
-        mcmc.config = list(
-                                    no.of.iterations = 12000,
-                                    no.of.burn.ins = 2000,
-                                    no.of.chains = 1
-                                    ))
-
-
-discretized_RT <- 

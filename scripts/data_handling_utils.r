@@ -21,5 +21,10 @@ load_and_clean_data <- function(assessment_id, directory = "data"){
     #-------- removing COLS where the no of missing is more than 60% ---------
     data$X <- data$X |> select(where(~ sum(is.na(.)) <= 0.75 * nrow(data$X)))
     data$RT <- data$RT |> select(where(~ sum(is.na(.)) <= 0.75 * nrow(data$RT)))
+
+    # removing non-functioning items 
+    selected_items <- colMeans(data$X, na.rm = TRUE) > 0 & colMeans(data$X,  na.rm = TRUE) < 1
+    data$X <-  data$X[,selected_items]
+    data$RT <- data$RT[,selected_items]
     return(list(X = data$X, RT = data$RT))
 }
