@@ -192,6 +192,7 @@ for(assessment in assessments){
 
 summary_stats <- data.frame(summary_table) 
 summary_stats[] <- sapply(summary_stats, as.numeric) 
+library(tinytable)
 tt(summary_stats, digits = 2,
     caption = "Summary Statistics of Assessments") |>
     setNames(c("{Assessment \\\\ ID}", "{No. of \\\\ Students}", "{No. of \\\\ Items}", "M", "SD",
