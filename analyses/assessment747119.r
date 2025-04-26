@@ -238,8 +238,546 @@ tt(coverage_results,
      print("latex")
 
 #===========================================================================
-#                            debugging
+#                            Engagement Classification Plots and Tables
+#===========================================================================
+model <- readRDS("analyses/model-fit_results/vics.rds")
+library(coda)
+library(codatools)
+
+I = nrow(data$X)
+J = ncol(data$X)
+smode <- function(x) {
+        return(as.numeric(names(which.max(table(x)))))
+    }
+#C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+#C <- matrix(apply(C ,2,smode),I,J)
+RT <- data$RT
+RT[is.na(RT)] <- 0
+# Common-k Threshold
+C_commonk <- RT >5
+C_commonk <- +C_commonk
+# Normative Threshold 
+k = 0.1
+thresholds = k* colMeans(RT <- RT, na.rm = TRUE)
+C_normative <- t(t(RT) > thresholds)
+C_normative <- +C_normative
+# VICS Threshold 
+model <- readRDS("analyses/model-fit_results/vics.rds")
+thresholds = model$thresholds
+C_vics <- t(t(RT) > thresholds)
+C_vics <- +C_vics
+
+# VII Threshold
+model <- readRDS("analyses/model-fit_results/vii.rds")
+thresholds = model$thresholds
+C_vii <- t(t(RT) > thresholds)
+C_vii <- +C_vii
+# GoMRT 
+library(codatools)
+model <- readRDS("analyses/model-fit_results/gomrt.rds")
+C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+C_gomrt <- matrix(apply(C ,2,smode),I,J)
+
+model <- readRDS("analyses/model-fit_results/dlcsl.rds")
+C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+C_dlcsl <- matrix(apply(C ,2,smode),I,J)
+
+model <- readRDS("analyses/model-fit_results/dlctl.rds")
+C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+C_dlctl <- matrix(apply(C ,2,smode),I,J)
+
+
+model <- readRDS("analyses/model-fit_results/mhm.rds")
+C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+C_mhm <- matrix(apply(C ,2,smode),I,J)
+
+model <- readRDS("analyses/model-fit_results/ilcre.rds")
+C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+C_ilcre <- matrix(apply(C ,2,smode),I,J)
+
+
+model <- readRDS("analyses/model-fit_results/ilcri.rds")
+C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+C_ilcri <- matrix(apply(C ,2,smode),I,J)
+
+C_raw_disagreement <- C_commonk + C_normative + C_vics + C_vii + C_gomrt + C_dlcsl + C_dlctl + C_mhm + C_ilcre + C_ilcri
+
+library(tidyverse)
+library(reshape2)
+
+
+plot_engagement_disagreement <- function(C_raw_disagreement, color_fill="red", element = element_text()){
+    
+    I <- nrow(C_raw_disagreement)
+    J <- ncol(C_raw_disagreement)
+    rownames(C_raw_disagreement) <- paste0("S", 1:I)
+    colnames(C_raw_disagreement) <- colnames(C_raw_disagreement)
+    melted_mat <- melt(C_raw_disagreement)
+    names(melted_mat) <- c("row", "column", "value")
+    melted_mat$column <- factor(melted_mat$column, levels = unique(melted_mat$column))
+
+    ggplot(melted_mat, aes(x = column, y = row, fill = value)) +
+    scale_x_discrete(expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0, 0)) +
+    geom_tile(color = "black") +  # add black borders around tiles [[3]]
+    scale_fill_gradient(low = "white", high =color_fill) +  # color gradient [[2]]
+    theme_bw() +
+    #coord_fixed() +  # ensure tiles are square [[2]]
+    labs(
+        x = "Item ID", 
+        y = "Students", 
+        fill = "Disagreement")  +
+                theme(legend.position = "none",
+                        plot.title = element_text(hjust=0.5),
+                        axis.text.x = element_text(angle = 90, size = 8),
+                        axis.text.y = element_text(),
+                        panel.border = element_rect(size = 1.5),
+                        axis.title = element_text(face = "bold"),
+                        axis.title.y = element
+                    )
+}
+
+full<- plot_engagement_disagreement(C_raw_disagreement, color="#155F83FF", element = element_blank()) + theme(aspect.ratio = 2)
+C_threshold_disagreement <- C_commonk + C_normative + C_vics + C_vii
+threshold_plots <- plot_engagement_disagreement(C_threshold_disagreement,color_fill = "#155F83FF") + theme(aspect.ratio =2.1)
+
+C_latent_diagreement <- C_gomrt+ C_dlcsl + C_dlctl + C_mhm + C_ilcre + C_ilcri
+latent_plots<- plot_engagement_disagreement(C_latent_diagreement,color_fill = "#155F83FF",
+                        element = element_blank()) + 
+    scale_x_discrete(labels = colnames(C_raw_disagreement)) + theme(aspect.ratio = 2)
+library(knitr)
+library(ggpubr)
+
+ggsave("disagreement.pdf")
+plot_crop("disagreement.pdf")
+
+ggarrange(threshold_plots,latent_plots, full, ncol = 3, labels = c("A","B","C"),
+ font.label = list(size = 12, face = "bold"), hjust = -1.5, # Move labels right
+vjust = 14)
+ggplot()
+
+commonk_long <- as.numeric(C_commonk)
+normative_long <- as.numeric(C_normative)
+vics_long <- as.numeric(C_vics)
+vii_long <- as.numeric(C_vii)
+gomrt_long <- as.numeric(C_gomrt)
+dlcsl_long <- as.numeric(C_dlcsl)
+dlctl_long <- as.numeric(C_dlctl)
+mhm_long <- as.numeric(C_mhm)
+ilcre_long <- as.numeric(C_ilcre)
+ilcri_long <- as.numeric(C_ilcri)
+
+ratings_data <- cbind(commonk_long,normative_long, vics_long, vii_long, gomrt_long, dlcsl_long, dlctl_long, mhm_long, ilcre_long,ilcre_long)
+colnames(ratings_data) <- c("Common K","Normative", "VICS", "VII", "GoMRT", "DLCSL","DLCTL","MHM","ILCRE", "ILCRI")
+n_raters <- ncol(ratings_data)
+
+kappa_matrix <- matrix(NA, nrow = n_raters, ncol = n_raters)
+rownames(kappa_matrix) <- colnames(ratings_data)
+colnames(kappa_matrix) <- colnames(ratings_data)
+library(irr)
+for(i in 1:(n_raters-1)) {
+    for(j in (i+1):n_raters) {
+      # Extract data for the pair of raters
+      pair_data <- ratings_data[, c(i, j)]
+      
+      # Remove rows with NA values
+      pair_data <- na.omit(pair_data)
+      
+      # Calculate kappa if there are enough observations
+      if(nrow(pair_data) > 1) {
+        k <- kappa2(pair_data)
+        kappa_matrix[i, j] <- k$value
+        kappa_matrix[j, i] <- k$value  # Matrix is symmetric
+      }
+    }
+  }
+diag(kappa_matrix) <- 1
+library(tinytable)
+as.data.frame(kappa_matrix)
+heatmap(kappa_matrix, 
+        Rowv = NA, Colv = NA, 
+        col = colorRampPalette(c("white", "steelblue"))(100),
+        main = "Cohen's Kappa Between Rater Pairs",
+        symm = TRUE)+theme_bw()
+
+    melted_mat <- melt(kappa_matrix)
+    names(melted_mat) <- c("row", "column", "value")
+    melted_mat$column <- factor(melted_mat$column, levels = unique(melted_mat$column))
+
+    ggplot(melted_mat, aes(x = column, y = row, fill = value)) + geom_tile() + theme_minimal()+
+  scale_fill_gradient(low="white", high="#C16622FF") + geom_text(aes(label = sprintf("%.2f",value)),  # Format to 2 decimal places
+            size = 5.5,                           # Adjust text size as needed
+            color = "black")+ theme(aspect.ratio = 1,
+                    axis.text.x = element_text(size=18, angle =90),
+                    axis.text.y = element_text(size=18)) +
+            labs(x="", y = "")
+ggsave("kappa_agreement.pdf")
+plot_crop("kappa_agreement.pdf")
+kappa_matrix
+ratings_data
+kappa2(ratings_data[,c(1,10)])
+
+X <- data$X
+
+
+plot_proportion_correct <- function(X,C_state){
+  X[is.na(X)] <- 0
+  P <- rowMeans(X)
+  E<- rowMeans(X * C_state)
+  D <- rowMeans(X* (1-C_state))
+  df<- data.frame("E"=E,"D"=D, "P" = P)
+
+
+  df_long <- df %>%
+    mutate(row_id = row_number()) %>%
+    pivot_longer(cols = c(E, D), names_to = "Type", values_to = "Value")
+  # Create the stacked bar plot with bars ordered by P
+  ggplot(df_long, aes(x = factor(row_id), y = Value, fill = Type)) +
+    geom_bar(stat = "identity", position = "stack") +
+    scale_fill_manual(values = c("E" = "#CC8214FF", "D" = "#800000FF")) +
+    labs(
+      x = "Students",
+      y = "Proportion Correct",
+      fill = "Proportion Correct Given the Engagement Status"
+    ) +
+    theme_minimal() +
+    theme(aspect.ratio = 0.5,
+      axis.title.x = element_text(size=16),
+      axis.title.y = element_text(size=12),
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.text.y = element_text(size = 12),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      legend.position = "top", 
+      legend.title =  element_text(size = 15),
+      legend.text = element_text(size=15)
+    ) 
+}
+
+
+p_commonk<- plot_proportion_correct(X, C_commonk)+ labs(title="Common K") + theme(plot.title = element_text(hjust=0.5, size = 16),
+                                                                                       axis.title.x = element_blank()) 
+p_normative<- plot_proportion_correct(X, C_normative)+ labs(title="Normative") + theme(plot.title = element_text(hjust=0.5, size = 16),
+                                                                                      axis.title.x = element_blank(),  )
+p_vics<- plot_proportion_correct(X, C_vics)+ labs(title="VICS") + theme(plot.title = element_text(hjust=0.5, size = 16),
+                                                                                      axis.title.x = element_blank()) 
+p_vii<- plot_proportion_correct(X, C_vii)+ labs(title="VII") + theme(plot.title = element_text(hjust=0.5, size = 16),
+                                                                                      axis.title.x = element_blank()) 
+p_gomrt<- plot_proportion_correct(X, C_gomrt)+ labs(title="GoMRT") + theme(plot.title = element_text(hjust=0.5, size = 16),
+                                                                                      axis.title.x = element_blank()) 
+p_dlcsl<- plot_proportion_correct(X, C_dlcsl)+ labs(title="DLCSL") + theme(plot.title = element_text(hjust=0.5, size = 16),
+                                                                                      axis.title.x = element_blank()) 
+p_dlctl<- plot_proportion_correct(X, C_dlctl)+ labs(title="DLCTL") + theme(plot.title = element_text(hjust=0.5, size = 16),
+                                                                                      axis.title.x = element_blank()) 
+p_mhm<- plot_proportion_correct(X, C_mhm)+ labs(title="MHM") + theme(plot.title = element_text(hjust=0.5, size = 16),
+                                                                                      axis.title.x = element_blank())
+p_ilcre<- plot_proportion_correct(X, C_ilcre)+ labs(title="ILCRE") + theme(plot.title = element_text(hjust=0.5, size = 16)) 
+p_ilcri<- plot_proportion_correct(X, C_ilcri) + labs(title="ILCRI") + theme(plot.title = element_text(hjust=0.5, size = 16)) 
+
+ggarrange(p_commonk, p_normative, p_vics, p_vii,
+          p_gomrt, p_dlcsl, p_dlctl,
+          p_mhm, p_ilcre, p_ilcri, 
+          common.legend = TRUE, ncol=2, nrow=5, label.x = 1,heights = c(1, 1, 1, 1, 1.1))
+ggsave("proportion_correct.pdf")
+plot_crop("proportion_correct.pdf")
+
+#===========================================================================
+#                            Theta comparisons
+#===========================================================================
+library(MCMCvis)
+model <- readRDS("analyses/model-fit_results/commonk.rds")
+theta_commonk <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/normative.rds")
+theta_normative <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/vics.rds")
+theta_vics <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/vii.rds")
+theta_vii <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/gomrt.rds")
+theta_gomrt <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/dlcsl.rds")
+theta_dlcsl <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/dlctl.rds")
+theta_dlctl <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/mhm.rds")
+theta_mhm <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/ilcre.rds")
+theta_ilcre <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+model <- readRDS("analyses/model-fit_results/ilcri.rds")
+theta_ilcri <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+
+theta_compare <- data.frame("Common K" = theta_commonk,
+            "Normative" = theta_normative,
+            "VICS" = theta_vics,
+            "VII" = theta_vii,
+            "GoMRT" = theta_gomrt,
+            "DLCSL" = theta_dlcsl,
+            "DLCTL" = theta_dlctl,
+            "MHM" = theta_mhm,
+            "ILCRE" = theta_ilcre,
+            "ILCRI" = theta_ilcri)
+df_long <- theta_compare %>%
+  mutate(ID = row_number()) %>%
+  pivot_longer(cols = -ID, names_to = "Model", values_to = "Value")
+theta_compare_plot<- ggplot(df_long, aes(x = ID, y = Value, color = Model, group = Model)) +
+  geom_point(size = 2.5, alpha = 0.7) +
+  theme_bw() +
+  labs(
+    x = "Students",
+    y = expression(theta)
+  ) +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 0),
+    axis.title.y = element_text(size=15),
+    panel.border = element_rect(size = 1.5),
+                        axis.title = element_text(face = "bold")
+  ) + coord_fixed(5)  +
+  scale_color_manual(values = c(
+    "Common.K" = "#6a3d9a",
+    "Normative" = "#cab2d6",
+    "VICS" = "#5B8FA8FF",
+    "VII" = "#0F425CFF",
+    "GoMRT" = "#C16622FF",
+    "DLCSL" = "#B1746FFF",
+    "DLCTL" = "#800000FF",
+    "MHM" = "#ADB17DFF",
+    "ILCRE" = "#616530FF",
+    "ILCRI" = "#3E3E23FF"
+  ))+ scale_x_continuous(
+    breaks = 1:nrow(X),  # Show every student  # Label with student numbers
+  )
+ggsave("theta_compare.pdf")
+plot_crop("theta_compare.pdf")
+
+
+df_long <- theta_compare %>%
+  # Add row identifier
+  mutate(Observation = row_number()) %>%
+  # Reshape to long format
+  pivot_longer(
+    cols = -Observation,
+    names_to = "Model",
+    values_to = "Estimate"
+  )
+
+
+
+posthoc <- pairwise.t.test(
+  df_long$Estimate, 
+  df_long$Model,
+  paired = TRUE,
+  p.adjust.method = "bonferroni"
+)
+
+print(posthoc)
+ggplot(df_long, aes(x = Model, y = Estimate, fill = Model)) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  ) +
+  labs(
+    title = "Distribution of Parameter Estimates Across Models",
+    x = "Model",
+    y = "Parameter Estimate"
+  ) + coord_flip()
+
+data.frame(posthoc)
+library(tinytable)
+ttest_res <- data.frame(posthoc$p.value)
+ttest_res$Model <- c("DLCSL", "DLCTL", "GoMRT", "ILCRE", "ILCRI", "MHM", "Normative", "VICS", "VII")
+ttest_res <- ttest_res %>%
+  select(Model, everything())
+ttest_res <-ttest_res %>%
+  mutate(across(where(is.numeric), ~formatC(., 
+                                           format = "g", 
+                                           digits = 2)),
+        across(everything(), ~replace_na(., "")),
+        across(everything(), 
+                ~if(is.character(.)) str_replace_all(., c(" NA" = "", "^NA$" = "")) else .))
+
+ttest_matrix <- as.matrix(ttest_res)
+tt <- tt(ttest_res,caption = "Bonferroni-Corrected Pairwise T-Tests Comparing Ability Estimates Between Engagement Models for Assessment 747119.")
+for(i in 1:nrow(ttest_matrix)) {
+  for(j in 2:ncol(ttest_matrix)) {
+    # Extract the value as text
+    val_text <- ttest_matrix[i,j]
+    
+    # Skip empty cells
+    if(val_text == "") next
+    
+    # Convert to numeric (handle scientific notation)
+    val_num <- as.numeric(val_text)
+    
+    # Bold if significant
+    if(!is.na(val_num) && val_num < 0.05) {
+      tt <- style_tt(
+        tt, 
+        i = i,
+        j = j,
+        bold = TRUE
+      )
+    }
+  }
+}
+tt  |> theme_tt("rotate")|> print("latex")
+
+#===========================================================================
+#                            Difficulty Comparisons
 #===========================================================================
 
+#===========================================================================
+#                            Theta comparisons
+#===========================================================================
+library(MCMCvis)
+model <- readRDS("analyses/model-fit_results/commonk.rds")
+d_commonk <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-coverage_results <- head(coverage_results, -1)
+model <- readRDS("analyses/model-fit_results/normative.rds")
+b_normative <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+model <- readRDS("analyses/model-fit_results/vics.rds")
+b_vics <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+model <- readRDS("analyses/model-fit_results/vii.rds")
+b_vii <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+model <- readRDS("analyses/model-fit_results/gomrt.rds")
+b_gomrt <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+model <- readRDS("analyses/model-fit_results/dlcsl.rds")
+b_dlcsl <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+model <- readRDS("analyses/model-fit_results/dlctl.rds")
+b_dlctl <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+model <- readRDS("analyses/model-fit_results/mhm.rds")
+b_mhm <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+model <- readRDS("analyses/model-fit_results/ilcre.rds")
+b_ilcre <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+model <- readRDS("analyses/model-fit_results/ilcri.rds")
+b_ilcri <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+
+b_compare <- data.frame("Common K" = d_commonk,
+            "Normative" = b_normative,
+            "VICS" = b_vics,
+            "VII" = b_vii,
+            "GoMRT" = b_gomrt,
+            "DLCSL" = b_dlcsl,
+            "DLCTL" = b_dlctl,
+            "MHM" = b_mhm,
+            "ILCRE" = b_ilcre,
+            "ILCRI" = b_ilcri)
+df_long <- b_compare %>%
+  mutate(ID = row_number()) %>%
+  pivot_longer(cols = -ID, names_to = "Model", values_to = "Value")
+d_compare_plot<- ggplot(df_long, aes(x = ID, y = Value, color = Model, group = Model)) +
+  geom_point(size = 2.5, alpha = 0.7) +
+  theme_bw() +
+  labs(
+    x = "Items",
+    y = expression(d)
+  ) +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90),
+    axis.title.y = element_text(size=15),
+    panel.border = element_rect(size = 1.5),
+                        axis.title = element_text(face = "bold"),
+  ) + coord_fixed(5)  +
+  scale_color_manual(values = c(
+    "Common.K" = "#6a3d9a",
+    "Normative" = "#cab2d6",
+    "VICS" = "#5B8FA8FF",
+    "VII" = "#0F425CFF",
+    "GoMRT" = "#C16622FF",
+    "DLCSL" = "#B1746FFF",
+    "DLCTL" = "#800000FF",
+    "MHM" = "#ADB17DFF",
+    "ILCRE" = "#616530FF",
+    "ILCRI" = "#3E3E23FF"
+  ))+ scale_x_continuous(
+    breaks = 1:ncol(X),  # Show every student  # Label with student numbers
+    label =  colnames(X)
+  ) + coord_fixed(2.75)
+ggarrange(theta_compare_plot,d_compare_plot,nrow = 2, common.legend = TRUE, labels=c("A", "B"), hjust = -6)
+ggsave("estimates_compare.pdf")
+plot_crop("estimates_compare.pdf")
+
+
+df_long <- b_compare %>%
+  # Add row identifier
+  mutate(Observation = row_number()) %>%
+  # Reshape to long format
+  pivot_longer(
+    cols = -Observation,
+    names_to = "Model",
+    values_to = "Estimate"
+  )
+
+
+
+posthoc <- pairwise.t.test(
+  df_long$Estimate, 
+  df_long$Model,
+  paired = TRUE,
+  p.adjust.method = "bonferroni"
+)
+print(posthoc)
+
+library(tinytable)
+ttest_res <- data.frame(posthoc$p.value)
+ttest_res$Model <- c("DLCSL", "DLCTL", "GoMRT", "ILCRE", "ILCRI", "MHM", "Normative", "VICS", "VII")
+ttest_res <- ttest_res %>%
+  select(Model, everything())
+ttest_res <-ttest_res %>%
+  mutate(across(where(is.numeric), ~formatC(., 
+                                           format = "g", 
+                                           digits = 2)),
+        across(everything(), ~replace_na(., "")),
+        across(everything(), 
+                ~if(is.character(.)) str_replace_all(., c(" NA" = "", "^NA$" = "")) else .))
+
+ttest_matrix <- as.matrix(ttest_res)
+tt <- tt(ttest_res,caption = "Bonferroni-Corrected Pairwise T-Tests Comparing Item Difficulty Estimates Between Engagement Models for Assessment 747119.")
+for(i in 1:nrow(ttest_matrix)) {
+  for(j in 2:ncol(ttest_matrix)) {
+    # Extract the value as text
+    val_text <- ttest_matrix[i,j]
+    
+    # Skip empty cells
+    if(val_text == "") next
+    
+    # Convert to numeric (handle scientific notation)
+    val_num <- as.numeric(val_text)
+    
+    # Bold if significant
+    if(!is.na(val_num) && val_num < 0.05) {
+      tt <- style_tt(
+        tt, 
+        i = i,
+        j = j,
+        bold = TRUE
+      )
+    }
+  }
+}
+tt|> theme_tt("rotate")|> print("latex")
