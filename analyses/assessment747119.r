@@ -55,7 +55,7 @@ saveRDS(model, "analyses/model-fit_results/gomrt.rds")
 
 model <- DLCSL.fit(data, 
                    params.to.monitor = c("correct_resp_prob", 
-                                          "class_p","C"))
+                                          "class_p","C","zeta", "tau"))
 model_fit_results <- rbind(model_fit_results, data.frame("Model" = "DLCSL",
                         "lppd"=model$posterior_samples$WAIC$lppd,
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
@@ -66,7 +66,7 @@ saveRDS(model, "analyses/model-fit_results/dlcsl.rds")
 
 model <- DLCTL.fit(data, 
                    params.to.monitor = c("correct_resp_prob",
-                                          "class_p","C","theta","b"))
+                                          "class_p","C","theta","b","zeta","tau"))
 model_fit_results <- rbind(model_fit_results, data.frame("Model" = "DLCTL",
                         "lppd"=model$posterior_samples$WAIC$lppd,
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
@@ -79,7 +79,7 @@ model <- nimbleModel(code = MHM, constants = const,
                      check = TRUE, calculate = FALSE)
 model <- MHM.fit(data, 
                    params.to.monitor = c("correct_resp_prob", "theta","b",
-                                          "class_p","C"))
+                                          "class_p","C", "eta"))
 model_fit_results <- rbind(model_fit_results, data.frame("Model" = "MHM",
                         "lppd"=model$posterior_samples$WAIC$lppd,
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
@@ -781,3 +781,408 @@ for(i in 1:nrow(ttest_matrix)) {
   }
 }
 tt|> theme_tt("rotate")|> print("latex")
+
+#===========================================================================
+#                            PATH ANALYSIS
+#===========================================================================
+library(MCMCvis)
+library(codatools)
+X <- data$X
+RT <- data$RT
+X[is.na(X)] <- 0
+RT[is.na(RT)] <- 0
+I = nrow(X)
+J = ncol(X)
+model <- readRDS("analyses/model-fit_results/ilcri.rds")
+Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
+Prob_X <-matrix(Prob_X,I,J)
+Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
+Prob_C <-matrix(Prob_C,I,J)
+theta_ilcri <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+b_ilcri <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+xi_ilcri <- MCMCsummary(model$posterior_samples$samples,"xi")$mean
+kappa_ilcri <- MCMCsummary(model$posterior_samples$samples,"kappa")$mean
+eta_ilcri <- MCMCsummary(model$posterior_samples$samples,"eta")$mean
+# C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+# C_ilcri <- matrix(apply(C ,2,smode),I,J)
+
+library(tidyverse)
+
+# Assuming all matrices have the same dimensions
+# n_students = number of rows in matrices
+# n_items = number of columns in matrices
+
+# First, create indices for all student-item combinations
+student_indices <- 1:nrow(Prob_X)
+item_indices <- 1:ncol(Prob_X)
+
+# Create a grid of all student-item combinations
+student_item_grid <- expand.grid(
+  student_id = student_indices,
+  item_id = item_indices
+)
+
+# Convert matrices to data frames
+prob_correct_df <- as.data.frame(Prob_X)
+prob_engaged_df <- as.data.frame(Prob_C)  # You mentioned both are similar
+rt_df <- as.data.frame(as.matrix(RT))  # Convert to matrix then dataframe to ensure proper conversion
+
+# Add student IDs as row names
+rownames(prob_correct_df) <- 1:nrow(prob_correct_df)
+rownames(prob_engaged_df) <- 1:nrow(prob_engaged_df)
+rownames(rt_df) <- 1:nrow(rt_df)
+colnames(rt_df) <- 1:ncol(rt_df)
+
+# Convert each matrix to long format
+prob_correct_long <- prob_correct_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "prob_correct") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+prob_engaged_long <- prob_engaged_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "prob_engaged") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+rt_long <- rt_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "response_time") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+# Join the long dataframes
+combined_df <- prob_correct_long %>%
+  select(student_id, item_id, prob_correct) %>%
+  left_join(
+    prob_engaged_long %>% select(student_id, item_id, prob_engaged),
+    by = c("student_id", "item_id")
+  )
+
+combined_df <- combined_df |> left_join(rt_long|>  select(student_id, item_id,response_time) , by = c("student_id", "item_id"))
+
+semdata<- combined_df %>%
+  mutate(
+    theta = theta_ilcri[student_id],
+    b = b_ilcri[item_id],
+    kappa = kappa_ilcri[item_id],
+    eta = eta_ilcri[student_id],
+    xi = xi_ilcri[student_id]
+  ) |> select(-c(student_id,item_id))
+
+library(lavaan)
+library(lavaanPlot)
+library(piecewiseSEM)
+library(tidyverse)
+library(matrixStats)
+
+model1 <- 'prob_correct ~ theta + prob_engaged + b
+           prob_engaged ~ eta + kappa
+           response_time ~ prob_engaged + xi
+           xi ~ eta
+           eta ~ theta
+           theta ~ xi'
+fit1 <- sem(model1, data = semdata) 
+lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
+
+model <- readRDS("analyses/model-fit_results/ilcre.rds")
+Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
+Prob_X <-matrix(Prob_X,I,J)
+Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
+Prob_C <-matrix(Prob_C,I,J)
+theta_ilcri <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+b_ilcri <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+xi_ilcri <- MCMCsummary(model$posterior_samples$samples,"xi")$mean
+kappa_ilcri <- MCMCsummary(model$posterior_samples$samples,"kappa")$mean
+eta_ilcri <- MCMCsummary(model$posterior_samples$samples,"eta")$mean
+# C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+# C_ilcri <- matrix(apply(C ,2,smode),I,J)
+
+library(tidyverse)
+
+# Assuming all matrices have the same dimensions
+# n_students = number of rows in matrices
+# n_items = number of columns in matrices
+
+# First, create indices for all student-item combinations
+student_indices <- 1:nrow(Prob_X)
+item_indices <- 1:ncol(Prob_X)
+
+# Create a grid of all student-item combinations
+student_item_grid <- expand.grid(
+  student_id = student_indices,
+  item_id = item_indices
+)
+
+# Convert matrices to data frames
+prob_correct_df <- as.data.frame(Prob_X)
+prob_engaged_df <- as.data.frame(Prob_C)  # You mentioned both are similar
+rt_df <- as.data.frame(as.matrix(RT))  # Convert to matrix then dataframe to ensure proper conversion
+
+# Add student IDs as row names
+rownames(prob_correct_df) <- 1:nrow(prob_correct_df)
+rownames(prob_engaged_df) <- 1:nrow(prob_engaged_df)
+rownames(rt_df) <- 1:nrow(rt_df)
+colnames(rt_df) <- 1:ncol(rt_df)
+
+# Convert each matrix to long format
+prob_correct_long <- prob_correct_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "prob_correct") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+prob_engaged_long <- prob_engaged_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "prob_engaged") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+rt_long <- rt_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "response_time") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+# Join the long dataframes
+combined_df <- prob_correct_long %>%
+  select(student_id, item_id, prob_correct) %>%
+  left_join(
+    prob_engaged_long %>% select(student_id, item_id, prob_engaged),
+    by = c("student_id", "item_id")
+  )
+
+combined_df <- combined_df |> left_join(rt_long|>  select(student_id, item_id,response_time) , by = c("student_id", "item_id"))
+
+semdata<- combined_df %>%
+  mutate(
+    theta = theta_ilcri[student_id],
+    b = b_ilcri[item_id],
+    kappa = kappa_ilcri[item_id],
+    eta = eta_ilcri[student_id],
+    xi = xi_ilcri[student_id]
+  ) |> select(-c(student_id,item_id))
+
+library(lavaan)
+library(lavaanPlot)
+library(piecewiseSEM)
+library(tidyverse)
+library(matrixStats)
+
+model1 <- 'prob_correct ~ theta + prob_engaged + b
+           prob_engaged ~ eta + kappa
+           response_time ~ prob_engaged + xi
+           xi ~ eta
+           eta ~ theta
+           theta ~ xi'
+fit1 <- sem(model1, data = semdata) 
+lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
+
+
+model <- readRDS("analyses/model-fit_results/mhm.rds")
+Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
+Prob_X <-matrix(Prob_X,I,J)
+Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
+Prob_C <-matrix(Prob_C,I,J)
+theta_ilcri <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+b_ilcri <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+#xi_ilcri <- MCMCsummary(model$posterior_samples$samples,"xi")$mean
+kappa_ilcri <- MCMCsummary(model$posterior_samples$samples,"kappa")$mean
+eta_ilcri <- MCMCsummary(model$posterior_samples$samples,"eta")$mean
+# C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+# C_ilcri <- matrix(apply(C ,2,smode),I,J)
+
+library(tidyverse)
+
+# Assuming all matrices have the same dimensions
+# n_students = number of rows in matrices
+# n_items = number of columns in matrices
+
+# First, create indices for all student-item combinations
+student_indices <- 1:nrow(Prob_X)
+item_indices <- 1:ncol(Prob_X)
+
+# Create a grid of all student-item combinations
+student_item_grid <- expand.grid(
+  student_id = student_indices,
+  item_id = item_indices
+)
+
+# Convert matrices to data frames
+prob_correct_df <- as.data.frame(Prob_X)
+prob_engaged_df <- as.data.frame(Prob_C)  # You mentioned both are similar
+rt_df <- as.data.frame(as.matrix(RT))  # Convert to matrix then dataframe to ensure proper conversion
+
+# Add student IDs as row names
+rownames(prob_correct_df) <- 1:nrow(prob_correct_df)
+rownames(prob_engaged_df) <- 1:nrow(prob_engaged_df)
+rownames(rt_df) <- 1:nrow(rt_df)
+colnames(rt_df) <- 1:ncol(rt_df)
+
+# Convert each matrix to long format
+prob_correct_long <- prob_correct_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "prob_correct") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+prob_engaged_long <- prob_engaged_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "prob_engaged") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+rt_long <- rt_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "response_time") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+# Join the long dataframes
+combined_df <- prob_correct_long %>%
+  select(student_id, item_id, prob_correct) %>%
+  left_join(
+    prob_engaged_long %>% select(student_id, item_id, prob_engaged),
+    by = c("student_id", "item_id")
+  )
+
+combined_df <- combined_df |> left_join(rt_long|>  select(student_id, item_id,response_time) , by = c("student_id", "item_id"))
+
+semdata<- combined_df %>%
+  mutate(
+    theta = theta_ilcri[student_id],
+    b = b_ilcri[item_id],
+    kappa = kappa_ilcri[item_id],
+    eta = eta_ilcri[student_id],
+  ) |> select(-c(student_id,item_id))
+
+library(lavaan)
+library(lavaanPlot)
+library(piecewiseSEM)
+library(tidyverse)
+library(matrixStats)
+
+model1 <- 'prob_correct ~ theta + prob_engaged + b
+           prob_engaged ~ eta + kappa
+           response_time ~ prob_engaged
+      
+           eta ~ theta'
+fit1 <- sem(model1, data = semdata) 
+lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
+
+
+model <- readRDS("analyses/model-fit_results/dlctl.rds")
+Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
+Prob_X <-matrix(Prob_X,I,J)
+Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
+Prob_C <-matrix(Prob_C,I,J)
+theta_ilcri <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
+b_ilcri <- MCMCsummary(model$posterior_samples$samples,"b")$mean
+#xi_ilcri <- MCMCsummary(model$posterior_samples$samples,"xi")$mean
+tau_ilcri <- MCMCsummary(model$posterior_samples$samples,"tau")$mean
+zeta_ilcri <- MCMCsummary(model$posterior_samples$samples,"zeta")$mean
+# C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
+# C_ilcri <- matrix(apply(C ,2,smode),I,J)
+
+library(tidyverse)
+
+# Assuming all matrices have the same dimensions
+# n_students = number of rows in matrices
+# n_items = number of columns in matrices
+
+# First, create indices for all student-item combinations
+student_indices <- 1:nrow(Prob_X)
+item_indices <- 1:ncol(Prob_X)
+
+# Create a grid of all student-item combinations
+student_item_grid <- expand.grid(
+  student_id = student_indices,
+  item_id = item_indices
+)
+
+# Convert matrices to data frames
+prob_correct_df <- as.data.frame(Prob_X)
+prob_engaged_df <- as.data.frame(Prob_C)  # You mentioned both are similar
+rt_df <- as.data.frame(as.matrix(RT))  # Convert to matrix then dataframe to ensure proper conversion
+
+# Add student IDs as row names
+rownames(prob_correct_df) <- 1:nrow(prob_correct_df)
+rownames(prob_engaged_df) <- 1:nrow(prob_engaged_df)
+rownames(rt_df) <- 1:nrow(rt_df)
+colnames(rt_df) <- 1:ncol(rt_df)
+
+# Convert each matrix to long format
+prob_correct_long <- prob_correct_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "prob_correct") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+prob_engaged_long <- prob_engaged_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "prob_engaged") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+rt_long <- rt_df %>%
+  rownames_to_column("student_id") %>%
+  pivot_longer(-student_id, 
+               names_to = "item_name", 
+               values_to = "response_time") %>%
+  mutate(student_id = as.integer(student_id),
+         item_id = as.integer(str_replace(item_name, "V", "")))
+
+# Join the long dataframes
+combined_df <- prob_correct_long %>%
+  select(student_id, item_id, prob_correct) %>%
+  left_join(
+    prob_engaged_long %>% select(student_id, item_id, prob_engaged),
+    by = c("student_id", "item_id")
+  )
+
+combined_df <- combined_df |> left_join(rt_long|>  select(student_id, item_id,response_time) , by = c("student_id", "item_id"))
+
+semdata<- combined_df %>%
+  mutate(
+    theta = theta_ilcri[student_id],
+    b = b_ilcri[item_id],
+    tau = tau_ilcri[item_id],
+    zeta = eta_ilcri[student_id],
+  ) |> select(-c(student_id,item_id))
+
+library(lavaan)
+library(lavaanPlot)
+library(piecewiseSEM)
+library(tidyverse)
+library(matrixStats)
+
+model1 <- 'prob_correct ~ theta + prob_engaged + b
+           prob_engaged ~ zeta + tau
+           response_time ~ prob_engaged
+      
+           zeta ~ theta'
+fit1 <- sem(model1, data = semdata) 
+lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
