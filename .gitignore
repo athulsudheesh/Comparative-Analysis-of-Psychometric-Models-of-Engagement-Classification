@@ -50,3 +50,6 @@ rsconnect/
 
 # analyses files 
 analyses/model-fit_results
+
+.pdf
+.rds
