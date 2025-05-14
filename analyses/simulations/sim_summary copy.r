@@ -13,9 +13,7 @@ get_summarystats_sim <- function(sim_data){
                 scores_m = mean(scores),
                 scores_sd = sd(scores),
                 RT_m= mean(meanRT),
-                RT_sd = sd(meanRT),
-            
-                Calpha = alpha))
+                RT_sd = sd(meanRT)))
 }
 summ <- list()
 sim_summ <- get_summarystats_sim(C_10)
@@ -38,13 +36,14 @@ library(tinytable)
 library(scales)
 tt(as.data.frame(summ_df),
 digits = 2,
-    caption = "Summary Statistics of Simulated Datasets") |>
-    setNames(c("Simulation Condition \\\\ Prob. of Engagement", "M", "SD", "M", "SD", "Cronbach's alpha")) |>
+    caption = "Summary Statistics of Simulated Datasets",width = c(0.3,0.15,0.15,0.15,0.15)) |>
+    setNames(c("Simulation Condition \\\\ Prob. of Engagement", "M", "SD", "M", "SD")) |>
     group_tt(j = list(
-                "{\\\\ Score}" = 2:3,
-                "{Avg. \\\\ Response \\\\ Time (s)}" = 4:5
+                "{Score}" = 2:3,
+                "{Avg. Response Time (s)}" = 4:5
             ))|>
-    style_tt(align="c")
+    style_tt(align="c") |>
+    print("latex")
 
 plot_score_distributions <- function(dat, cond){
     #dat <- load_and_clean_data(assessment_id)
@@ -105,4 +104,4 @@ y <- ggarrange(l,m,n,o,nrow = 4)
 ggarrange(x,y,ncol = 2,labels = c("A","B"))
 ggsave("Newsim_distrbutions.pdf")
 library(knitr)
-plot_crop("sim_distrbutions.pdf")
+plot_crop("Newsim_distrbutions.pdf")

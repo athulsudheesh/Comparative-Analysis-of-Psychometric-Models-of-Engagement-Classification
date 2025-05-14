@@ -44,7 +44,8 @@ digits = 2,
                 "{\\\\ Score}" = 2:3,
                 "{Avg. \\\\ Response \\\\ Time (s)}" = 4:5
             ))|>
-    style_tt(align="c")
+    style_tt(align="c") |>
+      print("latex")
 
 plot_score_distributions <- function(dat, cond){
     #dat <- load_and_clean_data(assessment_id)
@@ -103,6 +104,6 @@ n <- plot_RT_distributions(C_60, "Engagement Probability: 60%")
 o <- plot_RT_distributions(C_90, "Engagement Probability: 90%")
 y <- ggarrange(l,m,n,o,nrow = 4)
 ggarrange(x,y,ncol = 2,labels = c("A","B"))
-ggsave("Newsim_distrbutions.pdf")
+ggsave("sim_distrbutions.pdf")
 library(knitr)
 plot_crop("sim_distrbutions.pdf")
