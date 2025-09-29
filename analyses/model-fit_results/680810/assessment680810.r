@@ -1,9 +1,6 @@
 source("scripts/model-fits.r") 
 source("scripts/data_handling_utils.r")
-
-sim_data <- readRDS("analyses/simulations/C_90/sim_data.rds")
-
-data <- list(X = sim_data$Y, RT = exp(sim_data$T_mat))
+data <- load_and_clean_data(680810)
 library(MCMCvis)
 header_names <- c("Model", "lppd", "pWAIC", "WAIC", "MSE", "SE")
 model_fit_results <- data.frame(matrix(ncol = length(header_names), nrow=0))
@@ -16,9 +13,9 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "Common-k",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/commonk.rds")
+saveRDS(model, "analyses/model-fit_results/680810/commonk.rds")
 #model_fit_results <- model_fit_results[-nrow(model_fit_results), ]
-#model <- readRDS("analyses/simulations/C_90/commonk.rds")
+model <- readRDS("analyses/model-fit_results/680810/commonk.rds")
 
 model <- Normative.fit(data)
 model_fit_results <- rbind(model_fit_results, data.frame("Model" = "Normative",
@@ -26,8 +23,8 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "Normative",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/normative.rds")
-#model <- readRDS("analyses/simulations/C_90/normative.rds")
+saveRDS(model, "analyses/model-fit_results/680810/normative.rds")
+model <- readRDS("analyses/model-fit_results/680810/normative.rds")
 
 model <- VICS.fit(data)
 model_fit_results <- rbind(model_fit_results, data.frame("Model" = "VICS",
@@ -35,8 +32,8 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "VICS",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/vics.rds")
-#model <- readRDS("analyses/simulations/C_90/vics.rds")
+saveRDS(model, "analyses/model-fit_results/680810/vics.rds")
+model <- readRDS("analyses/model-fit_results/680810/vics.rds")
 
 model <- VII.fit(data)
 model_fit_results <- rbind(model_fit_results, data.frame("Model" = "VII",
@@ -44,8 +41,8 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "VII",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/vii.rds")
-#model <- readRDS("analyses/simulations/C_90/vii.rds")
+saveRDS(model, "analyses/model-fit_results/680810/vii.rds")
+model <- readRDS("analyses/model-fit_results/680810/vii.rds")
 
 model <- GoMRT.fit(data, 
                    params.to.monitor = c("correct_resp_prob",
@@ -55,8 +52,8 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "GoMRT",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/gomrt.rds")
-#model <- readRDS("analyses/simulations/C_90/gomrt.rds")
+saveRDS(model, "analyses/model-fit_results/680810/gomrt.rds")
+model <- readRDS("analyses/model-fit_results/680810/gomrt.rds")
 
 model <- DLCSL.fit(data, 
                    params.to.monitor = c("correct_resp_prob", 
@@ -66,8 +63,8 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "DLCSL",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/dlcsl.rds")
-#model <- readRDS("analyses/simulations/C_90/dlcsl.rds")
+saveRDS(model, "analyses/model-fit_results/680810/dlcsl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlcsl.rds")
 
 model <- DLCTL.fit(data, 
                    params.to.monitor = c("correct_resp_prob",
@@ -77,8 +74,8 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "DLCTL",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/dlctl.rds")
-#model <- readRDS("analyses/simulations/C_90/dlctl.rds")
+saveRDS(model, "analyses/model-fit_results/680810/dlctl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlctl.rds")
 # model <- nimbleModel(code = MHM, constants = const, 
 #                      data = data, inits = inits(),
 #                      check = TRUE, calculate = FALSE)
@@ -90,8 +87,8 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "MHM",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/mhm.rds")
-#model <- readRDS("analyses/simulations/C_90/mhm.rds")
+saveRDS(model, "analyses/model-fit_results/680810/mhm.rds")
+model <- readRDS("analyses/model-fit_results/680810/mhm.rds")
 
 model <- ILCRE.fit(data, 
                    params.to.monitor = c("correct_resp_prob","theta","b",
@@ -101,8 +98,8 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "ILCRE",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/ilcre.rds")
-#model <- readRDS("analyses/simulations/C_90/ilcre.rds")
+saveRDS(model, "analyses/model-fit_results/680810/ilcre.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcre.rds")
 
 model <- ILCRI.fit(data, 
                    params.to.monitor = c("correct_resp_prob", "theta","b",
@@ -112,27 +109,28 @@ model_fit_results <- rbind(model_fit_results, data.frame("Model" = "ILCRI",
                         "pWAIC"=model$posterior_samples$WAIC$pWAIC,
                         "WAIC"=model$posterior_samples$WAIC$WAIC,
                         "MSE"= model$cvvals$CVvalue,"SE"= model$cvvals$CVstandardError))
-saveRDS(model, "analyses/simulations/C_90/ilcri.rds")
-#model <- readRDS("analyses/simulations/C_90/ilcri.rds")
+saveRDS(model, "analyses/model-fit_results/680810/ilcri.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcri.rds")
 
 
 
-saveRDS(model_fit_results,"analyses/simulations/C_90/model_fit_results.rds")
+saveRDS(model_fit_results,"analyses/model-fit_results/680810/model_fit_results.rds")
 
 #===========================================================================
 #                            Model Fit results table
 #===========================================================================
-model_fit_results <- readRDS("analyses/simulations/C_90/model_fit_results.rds")
+model_fit_results <- readRDS("analyses/model-fit_results/680810/model_fit_results.rds")
 library(tinytable)
+model_fit_results <- model_fit_results[,c("Model","lppd", "pWAIC", "WAIC")]
 model_fit_results$SE <- formatC(model_fit_results$SE,format = "e", digits = 2)
-tt(model_fit_results,
-caption = "Model fit results from MCMC analysis for all models applied to C90 data") |>
-            group_tt(j = list(
-                "3-fold CV Error" = 5:6
-            )) |>
-            format_tt(j = 2:6, digits = 2,num_fmt = "decimal") |>
+tt(model_fit_results, width=1,
+caption = "Model fit results from MCMC analysis for all models applied to Assessment 747119 data") |>
+            format_tt(j = 2:4, digits = 2,num_fmt = "decimal") |>
             style_tt(i = 7, bold=TRUE) |>
             print("latex")
+library(tidyverse)
+
+# Assuming model_fit_results is your data frame
 library(tidyverse)
 model_fit_results <- model_fit_results |>
   mutate(
@@ -181,7 +179,7 @@ rank_order <- ggplot(model_rankings_long, aes(x = Model, y = Rank, fill = Metric
   geom_bar(stat = "identity", position = "dodge") + theme_minimal()+
   scale_y_continuous(breaks = 1:10) +
   coord_flip() +  # Flip coordinates for horizontal bars
-  labs(title = "C90", 
+  labs(title = "680810", 
     x = "Model",
     y = "Rank",
     fill = "Performance Metric"  # This renames the legend title
@@ -195,7 +193,9 @@ rank_order <- ggplot(model_rankings_long, aes(x = Model, y = Rank, fill = Metric
   scale_fill_manual(values = c("in-sample performance" = "#0F425CFF", 
                                "out-of-sample performance" = "#800000FF"))
 
-saveRDS(rank_order, "C90rankorder.rds")
+saveRDS(rank_order, "680810rankorder.rds")
+ggsave("rankorderplot.pdf")
+
 #===========================================================================
 #                            MCMC Coverage Table 
 #===========================================================================
@@ -209,7 +209,7 @@ colnames(coverage_results) <- header_names
 
 
 library(MCMCvis)
-model <- readRDS("analyses/simulations/C_90/commonk.rds")
+model <- readRDS("analyses/model-fit_results/680810/commonk.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 coverage_results <- rbind(coverage_results, 
@@ -217,28 +217,28 @@ coverage_results <- rbind(coverage_results,
                         "d" = Bcoverage,"C"= "", "eta" = "", "kappa" = "", "xi"= ""))
 
 
-model <- readRDS("analyses/simulations/C_90/normative.rds")
+model <- readRDS("analyses/model-fit_results/680810/normative.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 coverage_results <- rbind(coverage_results, 
                         data.frame("Model" = "Normative", "Theta" = Thetacoverage,
                         "d" = Bcoverage,"C"= "", "eta" = "", "kappa" = "", "xi"= ""))
 
-model <- readRDS("analyses/simulations/C_90/vics.rds")
+model <- readRDS("analyses/model-fit_results/680810/vics.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 coverage_results <- rbind(coverage_results, 
                         data.frame("Model" = "VICS", "Theta" = Thetacoverage,
                         "d" = Bcoverage,"C"= "", "eta" = "", "kappa" = "", "xi"= ""))
 
-model <- readRDS("analyses/simulations/C_90/vii.rds")
+model <- readRDS("analyses/model-fit_results/680810/vii.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 coverage_results <- rbind(coverage_results, 
                         data.frame("Model" = "VII", "Theta" = Thetacoverage,
                         "d" = Bcoverage,"C"= "", "eta" = "", "kappa" = "", "xi"= ""))
 
-model <- readRDS("analyses/simulations/C_90/gomrt.rds")
+model <- readRDS("analyses/model-fit_results/680810/gomrt.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 Ccoverage <- compute_coverage(model,"class_p")
@@ -246,7 +246,7 @@ coverage_results <- rbind(coverage_results,
                         data.frame("Model" = "GoMRT", "Theta" = Thetacoverage,
                         "d" = Bcoverage,"C"= Ccoverage, "eta" = "", "kappa" = "", "xi"= ""))
 
-model <- readRDS("analyses/simulations/C_90/dlcsl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlcsl.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 Ccoverage <- compute_coverage(model,"class_p")
@@ -254,7 +254,7 @@ coverage_results <- rbind(coverage_results,
                         data.frame("Model" = "DLCSL", "Theta" = Thetacoverage,
                         "d" = Bcoverage,"C"= Ccoverage, "eta" = "", "kappa" = "", "xi"= ""))
 
-model <- readRDS("analyses/simulations/C_90/dlctl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlctl.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 Ccoverage <- compute_coverage(model,"class_p")
@@ -262,7 +262,7 @@ coverage_results <- rbind(coverage_results,
                         data.frame("Model" = "DLCTL", "Theta" = Thetacoverage,
                         "d" = Bcoverage,"C"= Ccoverage, "eta" = "", "kappa" = "", "xi"= ""))
 
-model <- readRDS("analyses/simulations/C_90/mhm.rds")
+model <- readRDS("analyses/model-fit_results/680810/mhm.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 Ccoverage <- compute_coverage(model,"class_p")
@@ -270,7 +270,7 @@ coverage_results <- rbind(coverage_results,
                         data.frame("Model" = "MHM", "Theta" = Thetacoverage,
                         "d" = Bcoverage,"C"= Ccoverage, "eta" = "", "kappa" = "", "xi"= ""))
 
-model <- readRDS("analyses/simulations/C_90/ilcre.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcre.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 Ccoverage <- compute_coverage(model,"class_p")
@@ -282,7 +282,7 @@ coverage_results <- rbind(coverage_results,
                         "d" = Bcoverage,"C"= Ccoverage, "eta" = etacoverage, 
                         "kappa" = kappacoverage, "xi"= xicoverage))
 
-model <- readRDS("analyses/simulations/C_90/ilcri.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcri.rds")
 Thetacoverage <-  compute_coverage(model,"theta")
 Bcoverage <- compute_coverage(model, "b")
 Ccoverage <- compute_coverage(model,"class_p")
@@ -294,7 +294,7 @@ coverage_results <- rbind(coverage_results,
                         "d" = Bcoverage,"C"= Ccoverage, "eta" = etacoverage, 
                         "kappa" = kappacoverage, "xi"= xicoverage))
 
-saveRDS(coverage_results,"analyses/simulations/C_90/coverage_results.rds")
+saveRDS(coverage_results,"analyses/model-fit_results/680810/coverage_results.rds")
 library(tinytable)
 coverage_results<- coverage_results |> 
   mutate_at(vars("C", "eta","kappa","xi"), as.numeric)
@@ -308,18 +308,10 @@ tt(coverage_results,
 #===========================================================================
 #                            Engagement Classification Plots and Tables
 #===========================================================================
-model <- readRDS("analyses/simulations/C_90/vics.rds")
+model <- readRDS("analyses/model-fit_results/680810/vics.rds")
 library(coda)
 library(codatools)
 
-sim_data <- readRDS("analyses/simulations/C_90/sim_data.rds")
-data <- list(X = sim_data$Y, RT = exp(sim_data$T_mat))
-header_names <- c("Model","Accuracy", "Sensitivity", "Specificity", "Precision")
-model_fit_results <- data.frame(matrix(ncol = length(header_names), nrow=0))
-colnames(model_fit_results) <- header_names
-RT <- data$RT
-X  <- data$X
-library(caret)
 I = nrow(data$X)
 J = ncol(data$X)
 smode <- function(x) {
@@ -332,127 +324,50 @@ RT[is.na(RT)] <- 0
 # Common-k Threshold
 C_commonk <- RT >5
 C_commonk <- +C_commonk
-actual <- as.factor(as.vector(sim_data$C))
-predicted <- as.factor(C_commonk)
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "Common-k",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
-
 # Normative Threshold 
 k = 0.1
 thresholds = k* colMeans(RT <- RT, na.rm = TRUE)
 C_normative <- t(t(RT) > thresholds)
 C_normative <- +C_normative
-predicted <- as.factor(C_normative)
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "Normative",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
-
-
-
 # VICS Threshold 
-model <- readRDS("analyses/simulations/C_90/vics.rds")
+model <- readRDS("analyses/model-fit_results/680810/vics.rds")
 thresholds = model$thresholds
 C_vics <- t(t(RT) > thresholds)
 C_vics <- +C_vics
-predicted <- as.factor(C_vics)
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "VICS",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
 
 # VII Threshold
-model <- readRDS("analyses/simulations/C_90/vii.rds")
+model <- readRDS("analyses/model-fit_results/680810/vii.rds")
 thresholds = model$thresholds
 C_vii <- t(t(RT) > thresholds)
 C_vii <- +C_vii
-predicted <- as.factor(C_vii)
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "VII",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
-
 # GoMRT 
 library(codatools)
-model <- readRDS("analyses/simulations/C_90/gomrt.rds")
+model <- readRDS("analyses/model-fit_results/680810/gomrt.rds")
 C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
 C_gomrt <- matrix(apply(C ,2,smode),I,J)
-predicted<- as.factor(as.vector(C_gomrt))
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "GoMRT",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
 
-model <- readRDS("analyses/simulations/C_90/dlcsl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlcsl.rds")
 C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
 C_dlcsl <- matrix(apply(C ,2,smode),I,J)
-predicted<- as.factor(as.vector(C_dlcsl))
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "DLCSL",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
 
-
-model <- readRDS("analyses/simulations/C_90/dlctl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlctl.rds")
 C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
 C_dlctl <- matrix(apply(C ,2,smode),I,J)
-predicted<- as.factor(as.vector(C_dlctl))
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "DLCTL",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
 
 
-model <- readRDS("analyses/simulations/C_90/mhm.rds")
+model <- readRDS("analyses/model-fit_results/680810/mhm.rds")
 C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
 C_mhm <- matrix(apply(C ,2,smode),I,J)
-predicted<- as.factor(as.vector(C_mhm))
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "MHM",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
 
-
-model <- readRDS("analyses/simulations/C_90/ilcre.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcre.rds")
 C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
 C_ilcre <- matrix(apply(C ,2,smode),I,J)
-predicted<- as.factor(as.vector(C_ilcre))
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "ILCRE",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
 
-model <- readRDS("analyses/simulations/C_90/ilcri.rds")
+
+model <- readRDS("analyses/model-fit_results/680810/ilcri.rds")
 C <- coda_grep(model$posterior_samples$samples,"C", return.matrix = TRUE)
-C_ilcri <- as.vector(matrix(apply(C ,2,smode),I,J))
-predicted<- as.factor(as.vector(C_ilcri))
-cf <- confusionMatrix(data=predicted, reference=actual)
-model_fit_results <- rbind(model_fit_results, data.frame("Model" = "ILCRI",
-                        "Accuracy" = cf$overall['Accuracy'],
-                        "Sensitivity" = cf$byClass['Sensitivity'],
-                        "Specificity" = cf$byClass['Specificity'],
-                        "Precision" = cf$byClass['Precision']))
-saveRDS(model_fit_results, "analyses/simulations/C_90/confusion_matrix.rds")
+C_ilcri <- matrix(apply(C ,2,smode),I,J)
+
 C_raw_disagreement <- C_commonk + C_normative + C_vics + C_vii + C_gomrt + C_dlcsl + C_dlctl + C_mhm + C_ilcre + C_ilcri
 
 library(tidyverse)
@@ -490,6 +405,118 @@ plot_engagement_disagreement <- function(C_raw_disagreement, color_fill="red", e
                     )
 }
 
+## Updated plotfunction 
+plot_engagement_disagreement <- function(C_raw_disagreement, X_matrix =data$X, color_fill="red", element = element_text()){
+    
+    I <- nrow(C_raw_disagreement)
+    J <- ncol(C_raw_disagreement)
+    
+    # Calculate student scores and item difficulties if X_matrix is provided
+    if(!is.null(X_matrix)) {
+        student_scores <- rowMeans(X_matrix, na.rm = TRUE)
+        item_difficulties <- colMeans(X_matrix, na.rm = TRUE)
+        
+        # Create student labels with scores
+        student_labels <- paste0("S", 1:I, " (", round(student_scores, 2), ")")
+        
+        # Order the rows of C_raw_disagreement by student scores (descending)
+        score_order <- order(student_scores, decreasing = TRUE)
+        C_raw_disagreement <- C_raw_disagreement[score_order, ]
+        rownames(C_raw_disagreement) <- student_labels[score_order]
+        
+        # Order the columns of C_raw_disagreement by item difficulty (ascending)
+        difficulty_order <- order(item_difficulties)
+        C_raw_disagreement <- C_raw_disagreement[, difficulty_order]
+        colnames(C_raw_disagreement) <- colnames(X_matrix)[difficulty_order]
+    } else {
+        rownames(C_raw_disagreement) <- paste0("S", 1:I)
+        colnames(C_raw_disagreement) <- colnames(C_raw_disagreement)
+    }
+    
+    melted_mat <- melt(C_raw_disagreement)
+    names(melted_mat) <- c("row", "column", "value")
+    melted_mat$column <- factor(melted_mat$column, levels = unique(melted_mat$column))
+    melted_mat$row <- factor(melted_mat$row, levels = rev(unique(melted_mat$row)))  # Reverse to have highest scores at top
+
+    ggplot(melted_mat, aes(x = column, y = row, fill = value)) +
+    scale_x_discrete(expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0, 0)) +
+    geom_tile(color = "black") +  # add black borders around tiles
+    scale_fill_gradient(low = "white", high = color_fill) +  # color gradient
+    theme_bw() +
+    labs(
+        x = "Item ID (ordered by difficulty)", 
+        y = "Students (ordered by score)", 
+        fill = "Disagreement") +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust=0.5),
+          axis.text.x = element_text(angle = 90, size = 8),
+          axis.text.y = element_text(),
+          panel.border = element_rect(size = 1.5),
+          axis.title = element_text(face = "bold"),
+          axis.title.y = element_text(size=8),
+          axis.title.x = element_text(size=8)
+    )
+}
+
+plot_engagement_disagreement(C_dlctl, color="#155F83FF", element = element_blank()) + theme(aspect.ratio = 2)
+ggsave("680810dlctl_engagement_matrix.pdf")
+full<- plot_engagement_disagreement(C_raw_disagreement, color="#155F83FF", element = element_blank()) + theme(aspect.ratio = 2)
+C_threshold_disagreement <- C_commonk + C_normative + C_vics + C_vii
+threshold_plots <- plot_engagement_disagreement(C_threshold_disagreement,color_fill = "#155F83FF") + theme(aspect.ratio =2.1)
+
+C_latent_diagreement <- C_gomrt+ C_dlcsl + C_dlctl + C_mhm + C_ilcre + C_ilcri
+latent_plots<- plot_engagement_disagreement(C_latent_diagreement,color_fill = "#155F83FF",
+                        element = element_blank()) + 
+    scale_x_discrete(labels = colnames(C_raw_disagreement)) + theme(aspect.ratio = 2)
+library(knitr)
+library(ggpubr)
+
+ggsave("disagreement_ordered.pdf")
+plot_crop("disagreement.pdf")
+
+ggarrange(threshold_plots,latent_plots, full, ncol = 3, labels = c("A","B","C"),
+ font.label = list(size = 12, face = "bold"), hjust = -1.5, # Move labels right
+vjust = 4)
+ggplot()
+
+
+full <- plot_engagement_disagreement(C_raw_disagreement, color="#155F83FF", element = element_blank()) + 
+  theme(
+    aspect.ratio = 2,
+    axis.text.x = element_text(angle = 90, size = 6, hjust = 1, vjust = 0.5),
+    axis.text.y = element_text(size = 6)
+  )
+
+C_threshold_disagreement <- C_commonk + C_normative + C_vics + C_vii
+threshold_plots <- plot_engagement_disagreement(C_threshold_disagreement, color_fill = "#155F83FF") + 
+  theme(
+    aspect.ratio = 2.1,
+    axis.text.x = element_text(angle = 90, size = 6, hjust = 1, vjust = 0.5),
+    axis.text.y = element_text(size = 6)
+  )
+
+C_latent_diagreement <- C_gomrt + C_dlcsl + C_dlctl + C_mhm + C_ilcre + C_ilcri
+latent_plots <- plot_engagement_disagreement(C_latent_diagreement, color_fill = "#155F83FF",
+                        element = element_blank()) + 
+    scale_x_discrete(labels = colnames(C_raw_disagreement)) + 
+    theme(
+      aspect.ratio = 2,
+      axis.text.x = element_text(angle = 90, size = 6, hjust = 1, vjust = 0.5),
+      axis.text.y = element_text(size = 6)
+    )
+
+# Add more spacing between plots and adjust label position
+ggarrange(threshold_plots, latent_plots, full, 
+          ncol = 3, 
+          labels = c("A", "B", "C"),
+          font.label = list(size = 12, face = "bold"), 
+          hjust = -0.5,  # Less negative hjust value to move labels right
+          vjust = 2,     # Reduced vjust to move labels down
+          widths = c(1, 1, 1),  # Equal widths for all plots
+          align = "h"    # Horizontal alignment
+)
+
 full<- plot_engagement_disagreement(C_raw_disagreement, color="#155F83FF", element = element_blank()) + theme(aspect.ratio = 2.1)
 C_threshold_disagreement <- C_commonk + C_normative + C_vics + C_vii
 threshold_plots <- plot_engagement_disagreement(C_threshold_disagreement,color_fill = "#155F83FF") + theme(aspect.ratio =2.1)
@@ -518,10 +545,9 @@ dlctl_long <- as.numeric(C_dlctl)
 mhm_long <- as.numeric(C_mhm)
 ilcre_long <- as.numeric(C_ilcre)
 ilcri_long <- as.numeric(C_ilcri)
-actual <- as.numeric(sim_data$C)
 
-ratings_data <- cbind(commonk_long,normative_long, vics_long, vii_long, gomrt_long, dlcsl_long, dlctl_long, mhm_long, ilcre_long,ilcre_long, actual)
-colnames(ratings_data) <- c("Common K","Normative", "VICS", "VII", "GoMRT", "DLCSL","DLCTL","MHM","ILCRE", "ILCRI", "Actual")
+ratings_data <- cbind(commonk_long,normative_long, vics_long, vii_long, gomrt_long, dlcsl_long, dlctl_long, mhm_long, ilcre_long,ilcre_long)
+colnames(ratings_data) <- c("Common K","Normative", "VICS", "VII", "GoMRT", "DLCSL","DLCTL","MHM","ILCRE", "ILCRI")
 n_raters <- ncol(ratings_data)
 
 kappa_matrix <- matrix(NA, nrow = n_raters, ncol = n_raters)
@@ -559,19 +585,159 @@ melted_mat <- melt(kappa_matrix)
 
     ggplot(melted_mat, aes(x = column, y = row, fill = value)) + geom_tile() + theme_minimal()+
   scale_fill_gradient(low="white", high="#C16622FF") + geom_text(aes(label = sprintf("%.2f",value)),  # Format to 2 decimal places
-            size = 3.5,                           # Adjust text size as needed
+            size = 5.5,                           # Adjust text size as needed
             color = "black")+ theme(aspect.ratio = 1,
-                    axis.text.x = element_text(size=12, angle =90),
-                    axis.text.y = element_text(size=12)) +
+                    axis.text.x = element_text(size=18, angle =90),
+                    axis.text.y = element_text(size=18)) +
             labs(x="", y = "")
-ggsave("New90sim_agreement.pdf")
-library(knitr)
+ggsave("680810kappa_agreement.pdf")
 plot_crop("680810kappa_agreement.pdf")
 kappa_matrix
 ratings_data
 kappa2(ratings_data[,c(1,10)])
 
 X <- data$X
+
+#===========================================================================
+#                            NEW KAPPA MATRIX CODE:WITH SIGNIFICANCE
+#===========================================================================
+
+# Create a p-value matrix
+p_value_matrix <- matrix(NA, nrow = n_raters, ncol = n_raters)
+rownames(p_value_matrix) <- colnames(ratings_data)
+colnames(p_value_matrix) <- colnames(ratings_data)
+diag(p_value_matrix) <- 0  # Diagonal p-values are 0 (self-comparison)
+
+# Recalculate the p-values using the same loop structure as your kappa calculations
+for(i in 1:(n_raters-1)) {
+  for(j in (i+1):n_raters) {
+    # Extract data for the pair of raters
+    pair_data <- ratings_data[, c(i, j)]
+    
+    # Remove rows with NA values
+    pair_data <- na.omit(pair_data)
+    
+    # Calculate kappa if there are enough observations
+    if(nrow(pair_data) > 1) {
+      k <- kappa2(pair_data)
+      p_value_matrix[i, j] <- k$p.value
+      p_value_matrix[j, i] <- k$p.value  # Matrix is symmetric
+    }
+  }
+}
+
+# Create significance matrix (TRUE if significant at alpha = 0.05)
+significance_matrix <- p_value_matrix < 0.05
+diag(significance_matrix) <- TRUE  # Diagonal is always significant (self-comparison)
+
+# Load necessary libraries
+library(reshape2)
+library(ggplot2)
+
+# Convert matrices to long format for ggplot
+kappa_df <- melt(kappa_matrix)
+colnames(kappa_df) <- c("Rater1", "Rater2", "Kappa")
+
+# Add significance information
+significance_df <- melt(significance_matrix)
+colnames(significance_df) <- c("Rater1", "Rater2", "Significant")
+
+# Add p-values
+pvalue_df <- melt(p_value_matrix)
+colnames(pvalue_df) <- c("Rater1", "Rater2", "Pvalue")
+
+# Combine all information
+kappa_df$Significant <- significance_df$Significant
+kappa_df$Pvalue <- pvalue_df$Pvalue
+
+# Add significance symbol
+kappa_df$SignificanceSymbol <- ifelse(kappa_df$Significant, "*", "")
+
+# Handle NA values for display
+kappa_df$KappaText <- ifelse(is.na(kappa_df$Kappa), 
+                            "NA", 
+                            sprintf("%.2f", kappa_df$Kappa))
+
+# Create a custom color variable based on your logic
+kappa_df$CustomColor <- ifelse(kappa_df$Kappa == 1.0, 
+                              "#006d2c",  # Dark orange for perfect agreement
+                              kappa_df$CustomColor)
+
+kappa_df$CustomColor <- ifelse(!is.na(kappa_df$Kappa) & 
+                              kappa_df$Kappa > 0.4 & 
+                              kappa_df$Kappa < 1.0 & 
+                              kappa_df$Significant == TRUE,
+                              "#31a354",  # Lighter orange for kappa between 0.4 and 1.0
+                              kappa_df$CustomColor)
+
+kappa_df$CustomColor <- ifelse(!is.na(kappa_df$Kappa) & 
+                              kappa_df$Kappa > 0.2 & 
+                              kappa_df$Kappa < 0.4 & 
+                              kappa_df$Significant == TRUE,
+                              "#bae4b3",  # Lighter orange for kappa between 0.4 and 1.0
+                              kappa_df$CustomColor)
+
+kappa_df$Category <- "Not significant or low agreement"
+
+# Assign categories based on your existing color logic
+kappa_df$Category <- ifelse(!is.na(kappa_df$Kappa) & 
+                           kappa_df$Kappa > 0.2 & 
+                           kappa_df$Kappa < 0.4 & 
+                           kappa_df$Significant == TRUE,
+                           "Fair significant agreement (0.2 < k < 0.4)", 
+                           kappa_df$Category)
+
+kappa_df$Category <- ifelse(!is.na(kappa_df$Kappa) & 
+                           kappa_df$Kappa > 0.4 & 
+                           kappa_df$Kappa < 1.0 & 
+                           kappa_df$Significant == TRUE,
+                           "Moderate-to-high significant agreement (0.4 < k < 1.0)", 
+                           kappa_df$Category)
+
+kappa_df$Category <- ifelse(kappa_df$Kappa == 1.0, 
+                          "Perfect agreement (k = 1.0)", 
+                          kappa_df$Category)
+
+# Create a factor with levels in the desired order
+kappa_df$Category <- factor(kappa_df$Category, 
+                           levels = c("Perfect agreement (k = 1.0)",
+                                     "Moderate-to-high significant agreement (0.4 < k < 1.0)",
+                                     "Fair significant agreement (0.2 < k < 0.4)",
+                                     "Not significant or low agreement"))
+
+# Create a data frame for the legend
+legend_df <- data.frame(
+  Category = levels(kappa_df$Category),
+  stringsAsFactors = FALSE
+)
+library(latex2exp)
+TeX(r"(Perfect agreement (\kappa = 1.0))")
+# Create the plot with the manual legend
+kappa_heatmap <- ggplot(kappa_df, aes(x = Rater2, y = Rater1)) +
+  geom_tile(aes(fill = Category)) +
+  geom_text(aes(label = paste0(KappaText, SignificanceSymbol)), 
+            color = "black", size = 3) +
+  scale_fill_manual(values = c("Perfect agreement (k = 1.0)" = "#006d2c",
+                              "Moderate-to-high significant agreement (0.4 < k < 1.0)" = "#31a354",
+                              "Fair significant agreement (0.2 < k < 0.4)" = "#bae4b3",
+                              "Not significant or low agreement" = "white"),
+                    name = "Agreement Levels")  +
+  theme_minimal() +
+  theme(aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(angle = 0, vjust = 0.5),
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5),
+    panel.grid.major = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 8)
+  ) + labs(x="",y="")
+
+library(knitr)
+# Optional: Save the plot
+ ggsave("Updated_kappa_heatmap680810.pdf", kappa_heatmap, width = 15, height = 8)
+ plot_crop("Updated_kappa_heatmap680810.pdf")
 
 
 plot_proportion_correct <- function(X,C_state){
@@ -640,34 +806,34 @@ plot_crop("680810proportion_correct.pdf")
 #                            Theta comparisons
 #===========================================================================
 library(MCMCvis)
-model <- readRDS("analyses/simulations/C_90/commonk.rds")
+model <- readRDS("analyses/model-fit_results/680810/commonk.rds")
 theta_commonk <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/normative.rds")
+model <- readRDS("analyses/model-fit_results/680810/normative.rds")
 theta_normative <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/vics.rds")
+model <- readRDS("analyses/model-fit_results/680810/vics.rds")
 theta_vics <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/vii.rds")
+model <- readRDS("analyses/model-fit_results/680810/vii.rds")
 theta_vii <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/gomrt.rds")
+model <- readRDS("analyses/model-fit_results/680810/gomrt.rds")
 theta_gomrt <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/dlcsl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlcsl.rds")
 theta_dlcsl <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/dlctl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlctl.rds")
 theta_dlctl <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/mhm.rds")
+model <- readRDS("analyses/model-fit_results/680810/mhm.rds")
 theta_mhm <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/ilcre.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcre.rds")
 theta_ilcre <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
-model <- readRDS("analyses/simulations/C_90/ilcri.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcri.rds")
 theta_ilcri <- MCMCsummary(model$posterior_samples$samples,"theta")$mean
 
 theta_compare <- data.frame("Common K" = theta_commonk,
@@ -713,7 +879,7 @@ theta_compare_plot<- ggplot(df_long, aes(x = ID, y = Value, color = Model, group
   ))+ scale_x_continuous(
     breaks = 1:nrow(X),  # Show every student  # Label with student numbers
   )
-  theta_compare_plot
+theta_compare_plot
 ggsave("theta_compare.pdf")
 plot_crop("theta_compare.pdf")
 ggplot(df_long, aes(x = Model, y = Estimate, fill = Model)) +
@@ -741,6 +907,16 @@ df_long <- theta_compare %>%
   )
 aov_result <- aov(Estimate ~ Model + Error(Observation), data = df_long)
 summary(aov_result)
+
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1   1.75    1.75               
+
+# Error: Within
+#            Df Sum Sq Mean Sq F value Pr(>F)
+# Model       9    0.8  0.0890    0.13  0.999
+# Residuals 659  451.6  0.6854 
+
 lm_model <- lm(Estimate ~ Model, data = df_long)
 
 # Normality of residuals
@@ -805,6 +981,7 @@ ability_estimates_compare_plot  <- ggpubr::ggline(model_summary,
     "ILCRE" = "#616530FF",
     "ILCRI" = "#3E3E23FF"
   )) + coord_fixed(0.75)
+saveRDS(ability_estimates_compare_plot, "680810ability.rds")
 
 posthoc <- pairwise.t.test(
   df_long$Estimate, 
@@ -908,34 +1085,34 @@ tt  |> theme_tt("rotate")|> print("latex")
 #                            Theta comparisons
 #===========================================================================
 library(MCMCvis)
-model <- readRDS("analyses/simulations/C_90/commonk.rds")
+model <- readRDS("analyses/model-fit_results/680810/commonk.rds")
 d_commonk <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/normative.rds")
+model <- readRDS("analyses/model-fit_results/680810/normative.rds")
 b_normative <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/vics.rds")
+model <- readRDS("analyses/model-fit_results/680810/vics.rds")
 b_vics <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/vii.rds")
+model <- readRDS("analyses/model-fit_results/680810/vii.rds")
 b_vii <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/gomrt.rds")
+model <- readRDS("analyses/model-fit_results/680810/gomrt.rds")
 b_gomrt <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/dlcsl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlcsl.rds")
 b_dlcsl <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/dlctl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlctl.rds")
 b_dlctl <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/mhm.rds")
+model <- readRDS("analyses/model-fit_results/680810/mhm.rds")
 b_mhm <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/ilcre.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcre.rds")
 b_ilcre <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
-model <- readRDS("analyses/simulations/C_90/ilcri.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcri.rds")
 b_ilcri <- MCMCsummary(model$posterior_samples$samples,"b")$mean
 
 b_compare <- data.frame("Common K" = d_commonk,
@@ -973,7 +1150,28 @@ model_summary <- df_long %>%
     CI_upper = Mean + 1.96 * SE,
     .groups = "drop"
   )
+df_long <-  b_compare %>%
+  # Add row identifier
+  mutate(Observation = row_number()) %>%
+  # Reshape to long format
+  pivot_longer(
+    cols = -Observation,
+    names_to = "Model",
+    values_to = "Estimate"
+  )
+aov_result <- aov(Estimate ~ Model + Error(Observation), data = df_long)
+summary(aov_result)
 
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1  3.641   3.641               
+
+# Error: Within
+#           Df Sum Sq Mean Sq F value   Pr(>F)    
+# Model      9  5.405  0.6006   5.525 5.04e-06 ***
+# Residuals 89  9.675  0.1087                     
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 # Create enhanced plot with points, means, and error bars
 d_estimates_compare_plot <- ggpubr::ggline(model_summary, 
        x = "Model", 
@@ -1016,9 +1214,11 @@ d_estimates_compare_plot <- ggpubr::ggline(model_summary,
     "ILCRE" = "#616530FF",
     "ILCRI" = "#3E3E23FF"
   )) + coord_fixed(1.25)
+saveRDS(d_estimates_compare_plot, "680810difficulty.rds")
+
 ggarrange(ability_estimates_compare_plot, d_estimates_compare_plot, nrow = 2, 
             labels = c("A","B"), widths = c(1,1), heights = c(1,1), vjust = 7)
-ggsave("NewSim680810estimates_compare.pdf")
+ggsave("680810estimates_compare.pdf")
 library(knitr)
 plot_crop("680810estimates_compare.pdf")
 d_compare_plot<- ggplot(df_long, aes(x = ID, y = Value, color = Model, group = Model)) +
@@ -1129,7 +1329,7 @@ X[is.na(X)] <- 0
 RT[is.na(RT)] <- 0
 I = nrow(X)
 J = ncol(X)
-model <- readRDS("analyses/simulations/C_90/ilcri.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcri.rds")
 Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
 Prob_X <-matrix(Prob_X,I,J)
 Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
@@ -1229,7 +1429,7 @@ semdata$response_time <- scale(semdata$response_time)
 fit1 <- sem(model1, data = semdata) 
 lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
 
-model <- readRDS("analyses/simulations/C_90/ilcre.rds")
+model <- readRDS("analyses/model-fit_results/680810/ilcre.rds")
 Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
 Prob_X <-matrix(Prob_X,I,J)
 Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
@@ -1329,7 +1529,7 @@ fit1 <- sem(model1, data = semdata)
 lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
 
 
-model <- readRDS("analyses/simulations/C_90/mhm.rds")
+model <- readRDS("analyses/model-fit_results/680810/mhm.rds")
 Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
 Prob_X <-matrix(Prob_X,I,J)
 Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
@@ -1427,7 +1627,7 @@ fit1 <- sem(model1, data = semdata)
 lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
 
 
-model <- readRDS("analyses/simulations/C_90/dlctl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlctl.rds")
 Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
 Prob_X <-matrix(Prob_X,I,J)
 Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
@@ -1526,7 +1726,7 @@ lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
 
 
 
-model <- readRDS("analyses/simulations/C_90/dlcsl.rds")
+model <- readRDS("analyses/model-fit_results/680810/dlcsl.rds")
 Prob_X <- MCMCsummary(model$posterior_samples$samples,"correct_resp_prob")$mean
 Prob_X <-matrix(Prob_X,I,J)
 Prob_C <- MCMCsummary(model$posterior_samples$samples,"class_p")$mean
@@ -1619,8 +1819,3 @@ model1 <- 'prob_correct ~ theta + prob_engaged + b
            response_time ~ prob_engaged'
 fit1 <- sem(model1, data = semdata) 
 lavaanPlot(name = "MODEL1", fit1,coefs = TRUE)
-
-
-#===========================================================================
-#                            Classification Performance
-#===========================================================================

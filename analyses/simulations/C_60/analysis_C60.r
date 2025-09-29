@@ -124,16 +124,76 @@ saveRDS(model_fit_results,"analyses/simulations/C_60/model_fit_results.rds")
 #===========================================================================
 model_fit_results <- readRDS("analyses/simulations/C_60/model_fit_results.rds")
 library(tinytable)
+model_fit_results <- model_fit_results[,c("Model","lppd", "pWAIC", "WAIC")]
 model_fit_results$SE <- formatC(model_fit_results$SE,format = "e", digits = 2)
-tt(model_fit_results,
-caption = "Model fit results from MCMC analysis for all models applied to Assessment 680810 data") |>
-            group_tt(j = list(
-                "3-fold CV Error" = 5:6
-            )) |>
-            format_tt(j = 2:6, digits = 2,num_fmt = "decimal") |>
+tt(model_fit_results, width=1,
+caption = "Model fit results from MCMC analysis for all models applied to C3`0 data") |>
+            format_tt(j = 2:4, digits = 2,num_fmt = "decimal") |>
             style_tt(i = 7, bold=TRUE) |>
             print("latex")
+library(tidyverse)
+model_fit_results <- model_fit_results |>
+  mutate(
+    # For lppd, higher is better
+    lppd_rank = rank(-lppd),  # Negative to reverse the ordering
+    
+    # For the other metrics, lower is better
+    pWAIC_rank = rank(pWAIC),
+    WAIC_rank = rank(WAIC),
+    MSE_rank = rank(MSE)
+  )
+library(tidyverse)
+library(ggplot2)
 
+library(tidyverse)
+library(ggplot2)
+
+# First, reshape the data to long format but only include WAIC and lppd ranks
+model_rankings_long <- model_fit_results %>%
+  select(Model, lppd_rank, WAIC_rank) %>%
+  pivot_longer(
+    cols = c(lppd_rank, WAIC_rank),
+    names_to = "Metric",
+    values_to = "Rank"
+  ) %>%
+  # Clean up metric names by removing "_rank" suffix
+  mutate(Metric = str_remove(Metric, "_rank"),
+         # Rename the metrics for the legend
+         Metric = case_when(
+           Metric == "WAIC" ~ "out-of-sample performance",
+           Metric == "lppd" ~ "in-sample performance",
+           TRUE ~ Metric
+         ))
+
+# Get the WAIC rank order to use for sorting models
+waic_order <- model_fit_results %>%
+  arrange(WAIC_rank) %>%
+  pull(Model)
+
+# Convert Model to a factor with levels ordered by WAIC rank
+model_rankings_long <- model_rankings_long %>%
+  mutate(Model = factor(Model, levels = waic_order))
+
+# Create the rank order plot with the specified colors
+rank_order <- ggplot(model_rankings_long, aes(x = Model, y = Rank, fill = Metric)) +
+  geom_bar(stat = "identity", position = "dodge") + theme_minimal()+
+  scale_y_continuous(breaks = 1:10) +
+  coord_flip() +  # Flip coordinates for horizontal bars
+  labs(title = "C60", 
+    x = "Model",
+    y = "Rank",
+    fill = "Performance Metric"  # This renames the legend title
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank()
+  ) +
+  # Use the two specific colors you provided
+  scale_fill_manual(values = c("in-sample performance" = "#0F425CFF", 
+                               "out-of-sample performance" = "#800000FF"))
+
+saveRDS(rank_order, "C60rankorder.rds")
 #===========================================================================
 #                            MCMC Coverage Table 
 #===========================================================================

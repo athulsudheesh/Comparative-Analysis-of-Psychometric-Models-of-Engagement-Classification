@@ -1,0 +1,86 @@
+Ability Estimate Comaprisons
+
+Assessment 7477119
+
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1  6.795   6.795               
+
+# Error: Within
+#            Df Sum Sq Mean Sq F value Pr(>F)
+# Model       9    7.6  0.8498   1.025  0.419
+# Residuals 449  372.3  0.8291 
+
+Assessment 735540
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1  9.677   9.677               
+
+# Error: Within
+#            Df Sum Sq Mean Sq F value Pr(>F)
+# Model       9    0.6  0.0718   0.126  0.999
+# Residuals 699  397.4  0.5685  
+
+Assessment 763628
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1  9.744   9.744               
+
+# Error: Within
+#            Df Sum Sq Mean Sq F value Pr(>F)
+# Model       9   0.37  0.0411   0.073      1
+# Residuals 549 308.56  0.5620   
+
+Assessment 680810
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1   1.75    1.75               
+
+# Error: Within
+#            Df Sum Sq Mean Sq F value Pr(>F)
+# Model       9    0.8  0.0890    0.13  0.999
+# Residuals 659  451.6  0.6854 
+
+Item Difficulty Estimate Comaprisons
+
+Assessment 7477119
+
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1  23.58   23.58               
+
+# Error: Within
+#            Df Sum Sq Mean Sq F value Pr(>F)
+# Model       9   13.4  1.4893   1.572  0.125
+# Residuals 219  207.5  0.9474
+
+Assessment 735540
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1 0.5456  0.5456               
+
+# Error: Within
+#            Df Sum Sq Mean Sq F value Pr(>F)
+# Model       9   4.66  0.5182   0.364   0.95
+# Residuals 129 183.78  1.4247
+
+Assessment 763628
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1   18.5    18.5               
+
+# Error: Within
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Model      9   4.59  0.5105   1.152  0.336
+# Residuals 89  39.45  0.4432
+
+Assessment 680810
+
+# Error: Observation
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals  1  3.641   3.641               
+
+# Error: Within
+#           Df Sum Sq Mean Sq F value   Pr(>F)    
+# Model      9  5.405  0.6006   5.525 5.04e-06 ***
+# Residuals 89  9.675  0.1087       

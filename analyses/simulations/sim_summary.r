@@ -63,7 +63,7 @@ plot_score_distributions <- function(dat, cond){
                         panel.border = element_rect(size = 1.5),
                         axis.title = element_text(face = "bold")
                     ) +
-                    labs(title = cond,x = "Sum Score", y = "Density")
+                    labs(title = cond,x = "Sum Score", y = "Density") + xlim(0,15)
 }
 
 
@@ -84,7 +84,7 @@ plot_RT_distributions <- function(dat, cond){
                         panel.border = element_rect(size = 1.5),
                         axis.title = element_text(face = "bold")
                     ) +
-                    labs(title = cond,x = "Avg. Response Time (s)", y = "Density")
+                    labs(title = cond,x = "Avg. Response Time (s)", y = "Density") + xlim(0,50)
 }
 
 library(tidyverse)
@@ -105,4 +105,4 @@ y <- ggarrange(l,m,n,o,nrow = 4)
 ggarrange(x,y,ncol = 2,labels = c("A","B"))
 ggsave("Newsim_distrbutions.pdf")
 library(knitr)
-plot_crop("sim_distrbutions.pdf")
+plot_crop("Newsim_distrbutions.pdf")

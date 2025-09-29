@@ -69,6 +69,66 @@ plot_item_response_times <- function(assessment_id){
     )
     
 }
+plot_item_response_times <- function(assessment_id){
+    dat <- load_and_clean_data(assessment_id)
+    
+    # Create difficulty data frame with the actual difficulty values (d)
+    D <- dat$X |> 
+        colMeans(na.rm = TRUE) |> 
+        as.data.frame() |> 
+        rownames_to_column() |> 
+        rename(item = "rowname", d = "colMeans(dat$X, na.rm = TRUE)") |>
+        mutate(difficulty = ifelse(d > 0.5, "H", "L"))
+    
+    # Sort D by difficulty value (d)
+    D_sorted <- D |> arrange(d)
+    
+    # Prepare response time data
+    longRT <- dat$RT |> 
+        rownames_to_column("student") |> 
+        pivot_longer(
+            cols = -student,
+            names_to = "item",
+            values_to = "response_time"
+        )
+
+    # Join with difficulty data
+    longRT <- left_join(longRT, D)
+    
+    # Convert item to a factor with levels ordered by difficulty
+    longRT <- longRT |>
+        mutate(
+            item = factor(item, 
+                        levels = D_sorted$item,
+                        ordered = TRUE)
+        )
+    
+    # Create the plot with ordered items
+    p <- ggplot(longRT, aes(x = response_time, y = item, fill = difficulty)) +
+        geom_density_ridges(alpha = 0.4, scale = 10, rel_min_height = 0.01, bandwidth = 1.5, color=NA) +
+        theme_bw() +
+        theme(legend.position="none",
+              plot.title = element_text(hjust=0.5),
+              axis.text.x = element_text(angle = 0, size = 10),
+              axis.text.y = element_text(angle = 0, size = 7.5),
+              axis.title.x = element_text(size = 10),
+              panel.border = element_rect(size = 1.5),
+              axis.title = element_text(face = "bold")
+        ) +
+        labs(
+            title = as.character(assessment_id),
+            x = "Response Time (s)",
+            y = "Items (ordered by difficulty)"
+        ) +
+        scale_fill_manual(
+            values = c("H" = "#1b9e77", "L" = "#7570b3"),
+            name = "Difficulty",
+            labels = c("High", "Low")
+        )
+    
+    return(p)
+}
+
 #===========================================================================
 #                            Ploting: Student Response Time
 #===========================================================================
@@ -121,6 +181,75 @@ plot_student_response_times <- function(assessment_id){
         labels = c("High", "Medium", "Low")
     )
 }
+plot_student_response_times <- function(assessment_id){
+    dat <- load_and_clean_data(assessment_id)
+    
+    # Calculate total score for each student
+    scores <- dat$X |> 
+        as.data.frame() |>
+        rownames_to_column("student") |>
+        mutate(
+            sum = rowSums(across(-student), na.rm=TRUE)
+        ) |>
+        # Add rank for sorting
+        arrange(desc(sum)) |>  # Sort in descending order (high scores first)
+        mutate(
+            student_rank = row_number(),
+            # Create three equally sized groups
+            score = case_when(
+                sum > quantile(sum, 2/3) ~ "H",
+                sum > quantile(sum, 1/3) ~ "M",
+                TRUE ~ "L"
+            )
+        ) |> 
+        select(student, sum, student_rank, score)
+    
+    # Prepare response time data
+    longRT <- dat$RT |> 
+        rownames_to_column("student") |> 
+        pivot_longer(
+            cols = -student,
+            names_to = "item",
+            values_to = "response_time"
+        )
+
+    # Join with scores and ranks
+    longRT <- left_join(longRT, scores)
+    
+    # Convert student to factor with levels ordered by score rank
+    longRT <- longRT |>
+        mutate(
+            student = factor(student, 
+                            levels = scores$student[order(scores$student_rank)],
+                            ordered = TRUE)
+        )
+    
+    # Create the plot with ordered students
+    p <- ggplot(longRT, aes(x = response_time, y = student, fill = score)) +
+        geom_density_ridges(alpha = 0.4, scale = 10, rel_min_height = 0.01, bandwidth = 1.5, color=NA) +
+        theme_bw() +
+        theme(legend.position="none",
+              plot.title = element_text(hjust=0.5),
+              axis.text.x = element_text(angle = 0, size = 10),
+              axis.text.y = element_blank(),
+              axis.ticks.y = element_blank(),
+              axis.title.x = element_text(size = 10),
+              panel.border = element_rect(size = 1.5),
+              axis.title = element_text(face = "bold")
+        ) +
+        labs(
+            title = as.character(assessment_id),
+            x = "Response Time (s)",
+            y = "Students"
+        ) +
+        scale_fill_manual(
+            values = c("H" = "#1b9e77", "M" = "#d95f02", "L" = "#7570b3"),
+            name = "Score",
+            labels = c("High", "Low", "Medium")
+        )
+    
+    return(p)
+}
 
 plot_score_distributions <- function(assessment_id){
     dat <- load_and_clean_data(assessment_id)
@@ -161,6 +290,48 @@ plot_RT_distributions <- function(assessment_id){
                     ) +
                     labs(title = as.character(assessment_id),x = "Avg. Response Time (s)", y = "Density")
 }
+library(matrixStats)
+plot_RT_distributions <- function(assessment_id){
+    # Make sure matrixStats package is loaded
+    if(!require("matrixStats")) {
+        install.packages("matrixStats")
+        library(matrixStats)
+    }
+    
+    dat <- load_and_clean_data(assessment_id)
+    
+    longRT <- dat$RT |> 
+        rownames_to_column("student") |> 
+        pivot_longer(
+            cols = -student,
+            names_to = "item",
+            values_to = "response_time"
+        )
+    
+    # Calculate row medians instead of row means
+    RTs <- data.frame(
+        student = rownames(dat$RT),
+        ts = rowMedians(as.matrix(dat$RT), na.rm = TRUE)
+    )
+    
+    ggdensity(RTs, x = "ts", color = "#800000FF") + 
+        theme_bw() +
+        theme(
+            legend.position = "none",
+            plot.title = element_text(hjust = 0.5),
+            axis.text.x = element_text(angle = 0, size = 10),
+            axis.text.y = element_text(angle = 0, size = 10),
+            axis.title.x = element_text(size = 10),
+            panel.border = element_rect(size = 1.5),
+            axis.title = element_text(face = "bold")
+        ) +
+        labs(
+            title = as.character(assessment_id),
+            x = "Median Response Time (s)", 
+            y = "Density"
+        ) + xlim(0,100)
+}
+
 #===========================================================================
 #                            SCRIPTS
 #===========================================================================
@@ -217,7 +388,7 @@ b<- plot_student_response_times(680810)
 c<- plot_student_response_times(735540)
 d<- plot_student_response_times(763628)
 ggarrange(a,b,c,d,legend="bottom", common.legend=TRUE)
-ggsave("RTStudents.pdf")
+ggsave("RTStudentsSORTED.pdf")
 plot_crop("RTStudents.pdf")
 
 ggsave("test.pdf")
@@ -227,8 +398,8 @@ k <- plot_item_response_times(680810)
 l <- plot_item_response_times(735540)
 m <- plot_item_response_times(763628)
 ggarrange(j,k,l,m,legend="bottom", common.legend=TRUE) 
-ggsave("RTItems.pdf")
-plot_crop("RTItems.pdf")
+ggsave("RTItemsSORTED.pdf")
+plot_crop("RTItemsSORTED.pdf")
 
 
 library(knitr)
@@ -250,9 +421,27 @@ k<- plot_RT_distributions(735540)
 l<- plot_RT_distributions(763628)
 x<- ggarrange(i,j,k,l,nrow=4) 
 ggarrange(z,x, labels = c("A", "B"))
-ggsave('ScoresAndRTDistributions.pdf')
+ggsave('ScoresAndRTDistributionsNEW.pdf')
 plot_crop('ScoresAndRTDistributions.pdf')
 
 #==========================================================================================================================
 #                                                     Simulation Summary
 #==========================================================================================================================
+
+a <- readRDS("C10rankorder.rds") 
+b <- readRDS("C30rankorder.rds") 
+c <- readRDS("C60rankorder.rds") 
+d <- readRDS("C90rankorder.rds") 
+library(ggpubr)
+ggarrange(a,b,c,d, common.legend = TRUE, nrow = 2, ncol = 2)
+ggsave('sim_rankorder.pdf')
+library(knitr)
+plot_crop('sim_rankorder.pdf')
+
+
+a <- readRDS("747119ability.rds") + coord_fixed(0.15)
+b <- readRDS("680810ability.rds") + coord_fixed(0.15)
+c <- readRDS("735540ability.rds") + coord_fixed(0.15)
+d <- readRDS("735540ability.rds") + coord_fixed(0.15)
+ggarrange(a,b,c,d, common.legend = TRUE, nrow = 4)
+ggsave("ability_anova.pdf")
